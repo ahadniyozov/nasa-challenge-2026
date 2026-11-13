@@ -1,0 +1,14 @@
+{
+  "name": "nasa-challenge-2026",
+  "private": true,
+  "version": "0.1.0",
+  "description": "GO / NO-GO: Mission Control — Space Mission Design Game (NASA Space Apps Challenge 2026)",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "npm run dev -w @mission/web",
+    "dev:server": "npm run dev -w @mission/server",
+    "build": "npm run build -w @mission/web",
+    "test": "npm test -w @mission/engine",
+    "typecheck": "tsc -p packages/engine && tsc -p apps/web --noEmit && tsc -p apps/server --noEmit"
+  }
+}

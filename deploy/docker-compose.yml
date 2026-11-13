@@ -1,0 +1,20 @@
+# Usage on the server:  cd deploy && cp .env.example .env && docker compose up -d --build
+services:
+  server:
+    build: { context: .., dockerfile: deploy/Dockerfile, target: server }
+    restart: unless-stopped
+    volumes: [mission-data:/data]
+    mem_limit: 256m
+
+  web:
+    build: { context: .., dockerfile: deploy/Dockerfile, target: web }
+    restart: unless-stopped
+    depends_on: [server]
+    environment: [DOMAIN=${DOMAIN}]
+    ports: ["80:80", "443:443"]
+    volumes: [caddy-data:/data, caddy-config:/config]
+
+volumes:
+  mission-data:
+  caddy-data:
+  caddy-config:
