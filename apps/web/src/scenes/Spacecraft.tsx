@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Bus, Component } from '@mission/engine';
+import { useT } from '../i18n';
 
 const BUS_SIZE: Record<string, [number, number, number]> = {
   'cubesat-3u': [0.35, 1.0, 0.35],
@@ -45,6 +46,7 @@ function Part({ label, onHover, children, position, rotation }: PartProps) {
 }
 
 export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus: Bus; parts: Component[]; spin?: boolean; showLabels?: boolean }) {
+  const { name } = useT();
   const ref = useRef<THREE.Group>(null);
   const [hover, setHover] = useState<string | null>(null);
   const tex = useMemo(cellTexture, []);
@@ -63,7 +65,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
   return (
     <group ref={ref}>
       {/* Bus body */}
-      <Part label={`${bus.name} — ${bus.dryMassKg} kg structure`} onHover={setHover}>
+      <Part label={`${name(bus.name)} — ${bus.dryMassKg} kg`} onHover={setHover}>
         <mesh castShadow>
           <boxGeometry args={[w, h, d]} />
           {foil}
@@ -79,7 +81,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
         if (s.category !== 'solar') return null;
         if (s.id === 'solar-body')
           return (
-            <Part key={i} label={s.name} onHover={setHover}>
+            <Part key={i} label={name(s.name)} onHover={setHover}>
               {[0, 1, 2, 3].map((f) => (
                 <mesh key={f} rotation={[0, (f * Math.PI) / 2, 0]} position={[Math.sin((f * Math.PI) / 2) * (w / 2 + 0.003), 0, Math.cos((f * Math.PI) / 2) * (d / 2 + 0.003)]}>
                   <planeGeometry args={[w * 0.85, h * 0.85]} />
@@ -92,7 +94,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
         const span = Math.sqrt(s.areaM2 / 2) * (bus.id.startsWith('cubesat') ? 1.6 : 1.1);
         const tier = solar.slice(0, i).filter((x) => x.id !== 'solar-body').length;
         return (
-          <Part key={i} label={`${s.name} — ${s.areaM2} m²`} onHover={setHover} position={[0, tier * 0.3, 0]}>
+          <Part key={i} label={`${name(s.name)} — ${s.areaM2} m²`} onHover={setHover} position={[0, tier * 0.3, 0]}>
             {[1, -1].map((side) => (
               <group key={side} position={[side * (w / 2 + span / 2 + 0.08), 0, 0]}>
                 <mesh>
@@ -116,7 +118,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
         const big = ins.massKg > 5;
         const r = big ? Math.min(w, d) * 0.22 : Math.min(w, d) * 0.15;
         return (
-          <Part key={i} label={`${ins.name} — ${ins.massKg} kg, ${ins.powerW} W`} onHover={setHover} position={[x, -h / 2 - r * 0.6, 0]}>
+          <Part key={i} label={`${name(ins.name)} — ${ins.massKg} kg, ${ins.powerW} W`} onHover={setHover} position={[x, -h / 2 - r * 0.6, 0]}>
             <mesh>
               <cylinderGeometry args={[r, r * 1.15, r * 1.4, 24]} />
               <meshStandardMaterial color="#e0e0e0" metalness={0.5} roughness={0.3} />
@@ -134,7 +136,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
         if (c.category !== 'comms') return null;
         if (c.band === 'UHF')
           return (
-            <Part key={i} label={`${c.name}`} onHover={setHover} position={[w / 2, h / 2, d / 2]}>
+            <Part key={i} label={name(c.name)} onHover={setHover} position={[w / 2, h / 2, d / 2]}>
               <mesh rotation={[0, 0, -Math.PI / 4]} position={[0.15, 0.15, 0]}>
                 <cylinderGeometry args={[0.005, 0.005, 0.45]} />
                 <meshStandardMaterial color="#ccc" />
@@ -144,7 +146,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
         const dish = c.band === 'X' || c.band === 'Ka';
         const r = dish ? Math.min(w, d) * (c.band === 'Ka' ? 0.35 : 0.22) : 0.08;
         return (
-          <Part key={i} label={`${c.name} — ${c.downlinkMbps} Mbps`} onHover={setHover} position={[(i - 0.5) * w * 0.4, h / 2 + 0.05, -d * 0.2]}>
+          <Part key={i} label={`${name(c.name)} — ${c.downlinkMbps} Mbps`} onHover={setHover} position={[(i - 0.5) * w * 0.4, h / 2 + 0.05, -d * 0.2]}>
             {dish ? (
               <>
                 <mesh rotation={[Math.PI, 0, 0]} position={[0, r * 0.5, 0]}>
@@ -168,7 +170,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
 
       {/* Thrusters at the back */}
       {props.map((p, i) => (
-        <Part key={i} label={`${p.name}`} onHover={setHover} position={[0, -h * 0.2 + i * 0.15, -d / 2 - 0.06]} rotation={[-Math.PI / 2, 0, 0]}>
+        <Part key={i} label={name(p.name)} onHover={setHover} position={[0, -h * 0.2 + i * 0.15, -d / 2 - 0.06]} rotation={[-Math.PI / 2, 0, 0]}>
           <mesh>
             <coneGeometry args={[Math.min(w, d) * 0.1, 0.15, 16, 1, true]} />
             <meshStandardMaterial color="#555" metalness={0.8} side={THREE.DoubleSide} />
@@ -178,7 +180,7 @@ export function Spacecraft({ bus, parts, spin = true, showLabels = true }: { bus
 
       {/* Battery indicator stripes on the side */}
       {batteries.map((b, i) => (
-        <Part key={i} label={b.name} onHover={setHover} position={[0, h * 0.3 - i * 0.12, d / 2 + 0.01]}>
+        <Part key={i} label={name(b.name)} onHover={setHover} position={[0, h * 0.3 - i * 0.12, d / 2 + 0.01]}>
           <mesh>
             <boxGeometry args={[w * 0.5, 0.06, 0.02]} />
             <meshStandardMaterial color="#2e7d32" emissive="#2e7d32" emissiveIntensity={0.4} />

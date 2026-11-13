@@ -2,6 +2,7 @@ import { Suspense, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { stationById } from '@mission/engine';
 import { useGame, type Phase } from './store';
+import { useLang, useT } from './i18n';
 import { HangarScene } from './scenes/HangarScene';
 import { OrbitScene } from './scenes/OrbitScene';
 import { LaunchScene } from './scenes/LaunchScene';
@@ -18,8 +19,21 @@ const STEPS: { id: Phase; label: string }[] = [
   { id: 'report', label: 'Report' },
 ];
 
+/** TEMPORARY: language switch for the team. Remove together with src/i18n/ru.ts. */
+function LangToggle() {
+  const { lang, setLang } = useLang();
+  return (
+    <div className="lang-toggle">
+      {(['ru', 'en'] as const).map((l) => (
+        <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>{l.toUpperCase()}</button>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   const { phase, setPhase, budgets, design, sim } = useGame();
+  const { t, name } = useT();
   const [view, setView] = useState<'hangar' | 'orbit'>('hangar');
   const [tele, setTele] = useState<{ inShadow: boolean; linkTo: string | null }>({ inShadow: false, linkTo: null });
   const month = useOpsClock();
@@ -31,16 +45,17 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="logo">GO<span>/</span>NO-GO <small>Mission Control</small></div>
+        <div className="logo">GO<span>/</span>NO-GO <small>{t('Mission Control')}</small></div>
         <nav className="steps">
           {STEPS.map((s, i) => (
-            <span key={s.id} className={s.id === phase ? 'on' : STEPS.findIndex((x) => x.id === phase) > i ? 'done' : ''}>{s.label}</span>
+            <span key={s.id} className={s.id === phase ? 'on' : STEPS.findIndex((x) => x.id === phase) > i ? 'done' : ''}>{t(s.label)}</span>
           ))}
         </nav>
         <div className="scenario-name">
-          {budgets?.scenario.title}
-          {phase === 'design' && <button className="link" onClick={() => setPhase('brief')}>change</button>}
+          {budgets && name(budgets.scenario.title)}
+          {phase === 'design' && <button className="link" onClick={() => setPhase('brief')}>{t('change')}</button>}
         </div>
+        <LangToggle />
       </header>
 
       <main className={`layout phase-${phase}`}>
@@ -61,20 +76,20 @@ export default function App() {
 
           {phase === 'design' && (
             <div className="view-toggle">
-              <button className={view === 'hangar' ? 'on' : ''} onClick={() => setView('hangar')}>🛰 Spacecraft</button>
-              <button className={view === 'orbit' ? 'on' : ''} onClick={() => setView('orbit')}>🌍 Orbit</button>
+              <button className={view === 'hangar' ? 'on' : ''} onClick={() => setView('hangar')}>{t('🛰 Spacecraft')}</button>
+              <button className={view === 'orbit' ? 'on' : ''} onClick={() => setView('orbit')}>{t('🌍 Orbit')}</button>
             </div>
           )}
 
           {showOrbit && budgets && (
             <div className="telemetry">
-              <div>{budgets.orbit.name}</div>
-              <div>Period {Math.round(budgets.orbitInfo.periodMin)} min · {budgets.orbitInfo.speedKms.toFixed(1)} km/s</div>
-              <div className={tele.inShadow ? 'bad' : 'ok'}>{tele.inShadow ? '● In Earth shadow — running on battery' : '● In sunlight — charging'}</div>
-              <div className={tele.linkTo ? 'ok' : 'dim'}>{tele.linkTo ? `● Downlink: ${tele.linkTo}` : '○ No ground contact — storing data'}</div>
+              <div>{name(budgets.orbit.name)}</div>
+              <div>{t('Period {p} min · {v} km/s', { p: Math.round(budgets.orbitInfo.periodMin), v: budgets.orbitInfo.speedKms.toFixed(1) })}</div>
+              <div className={tele.inShadow ? 'bad' : 'ok'}>{tele.inShadow ? t('● In Earth shadow — running on battery') : t('● In sunlight — charging')}</div>
+              <div className={tele.linkTo ? 'ok' : 'dim'}>{tele.linkTo ? t('● Downlink: {s}', { s: name(tele.linkTo) }) : t('○ No ground contact — storing data')}</div>
             </div>
           )}
-          {stormNow && <div className="alert">☀ SOLAR STORM</div>}
+          {stormNow && <div className="alert">{t('☀ SOLAR STORM')}</div>}
         </section>
 
         {phase === 'design' && <ResourcePanel />}
