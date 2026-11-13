@@ -5,7 +5,11 @@
 Design, launch and operate a space mission as a team. Every choice costs mass, power, money, data or time,
 and when a mission fails, the game explains *why*.
 
-## Two ways to play
+## Orbital Runner (main game)
+
+The satellite flies its orbit like a runner character: dodge space junk in 3 lanes, fly over ⭐ targets in daylight to take photos, and fly over 📡 ground stations to send them home - only delivered photos count. One orbit = 30 s; the share of each orbit spent in Earth's shadow comes from the real geometry (≈36% at 550 km), and the battery drains there. A solar storm demands safe mode. Next: a garage with upgrades between runs (battery, panels, antenna, memory, shield) - each one a real engineering trade-off.
+
+## Other modes
 
 - **Simple mode** (default, ages 10+): one question per screen with 3 big choices, five smiley meters (weight, energy, money, photos home, lifetime), a crew of four advisors who explain every problem in plain words and jump you to the step that fixes it. The flight is a mini-game: tap targets inside the camera's green circle, photos fly home only over ground stations, the battery drains in Earth's shadow, and real engine events (solar storms, failures, debris) interrupt you. 1-3 stars per mission.
 - **Engineer mode** (`🔧` in the top bar, or `?expert`): the full mission-design console described below.
