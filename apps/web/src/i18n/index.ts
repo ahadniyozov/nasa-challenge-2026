@@ -1,10 +1,13 @@
 // TEMPORARY i18n layer (RU for the team, EN for judges).
 // To remove Russian before submission:
-//   1. delete ru.ts and the LangToggle in App.tsx
+//   1. delete ru.ts, ru-kid.ts and the LangToggle in App.tsx
 //   2. make makeT() return the English branch only (or replace calls with the raw strings)
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { RU_BLURBS, RU_MSG, RU_NAMES, RU_RULES, RU_UI } from './ru';
+import { RU_BLURBS, RU_MSG, RU_NAMES, RU_RULES, RU_UI as RU_BASE } from './ru';
+import { RU_KID } from './ru-kid';
+
+const RU_UI: Record<string, string> = { ...RU_BASE, ...RU_KID };
 
 export type Lang = 'en' | 'ru';
 

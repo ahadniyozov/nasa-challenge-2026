@@ -7,7 +7,7 @@ import { physics, type GroundStation, type Orbit } from '@mission/engine';
 
 const R = 1; // Earth radius in scene units
 const KM = 1 / physics.EARTH_RADIUS_KM;
-const SUN = new THREE.Vector3(1, 0, 0);
+export const SUN = new THREE.Vector3(1, 0, 0);
 const DEG = Math.PI / 180;
 const MIN_ELEV = Math.sin(10 * DEG);
 
@@ -18,14 +18,14 @@ export function latLonToVec(lat: number, lon: number, r = R): THREE.Vector3 {
 }
 
 /** Position on a circular orbit: argument of latitude u, inclination i, RAAN raan. */
-function orbitPos(r: number, u: number, inc: number, raan: number, out = new THREE.Vector3()) {
+export function orbitPos(r: number, u: number, inc: number, raan: number, out = new THREE.Vector3()) {
   const x = r * Math.cos(u);
   const z0 = r * Math.sin(u);
   out.set(x, -z0 * Math.sin(inc), z0 * Math.cos(inc));
   return out.applyAxisAngle(new THREE.Vector3(0, 1, 0), raan);
 }
 
-function inShadow(p: THREE.Vector3) {
+export function inShadow(p: THREE.Vector3) {
   const along = p.dot(SUN);
   if (along > 0) return false;
   const perp = p.clone().sub(SUN.clone().multiplyScalar(along));
@@ -47,12 +47,12 @@ const earthShader = {
       float l = dot(normalize(vNormalW), normalize(sunDir));
       float mixF = smoothstep(-0.15, 0.2, l);
       vec3 day = texture2D(dayMap, vUv).rgb * (0.25 + 0.95 * max(l, 0.0));
-      vec3 night = texture2D(nightMap, vUv).rgb * 1.4;
+      vec3 night = texture2D(nightMap, vUv).rgb * 1.4 + texture2D(dayMap, vUv).rgb * 0.3;
       gl_FragColor = vec4(mix(night, day, mixF), 1.0);
     }`,
 };
 
-function Earth({ rotation }: { rotation: React.MutableRefObject<number> }) {
+export function Earth({ rotation }: { rotation: React.MutableRefObject<number> }) {
   const [day, night] = useLoader(THREE.TextureLoader, ['/textures/earth-day.webp', '/textures/earth-night.webp']);
   day.colorSpace = night.colorSpace = THREE.SRGBColorSpace;
   const ref = useRef<THREE.Mesh>(null);
@@ -188,7 +188,7 @@ export function OrbitScene({ orbit, stations, timeScale = 300, alert = null, onT
   );
 }
 
-function EarthFixed({ rotation, children }: { rotation: React.MutableRefObject<number>; children: React.ReactNode }) {
+export function EarthFixed({ rotation, children }: { rotation: React.MutableRefObject<number>; children: React.ReactNode }) {
   const g = useRef<THREE.Group>(null);
   useFrame(() => { if (g.current) g.current.rotation.y = rotation.current; });
   return <group ref={g}>{children}</group>;

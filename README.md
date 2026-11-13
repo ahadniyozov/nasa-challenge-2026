@@ -5,7 +5,14 @@
 Design, launch and operate a space mission as a team. Every choice costs mass, power, money, data or time,
 and when a mission fails, the game explains *why*.
 
-## Game loop
+## Two ways to play
+
+- **Simple mode** (default, ages 10+): one question per screen with 3 big choices, five smiley meters (weight, energy, money, photos home, lifetime), a crew of four advisors who explain every problem in plain words and jump you to the step that fixes it. The flight is a mini-game: tap targets inside the camera's green circle, photos fly home only over ground stations, the battery drains in Earth's shadow, and real engine events (solar storms, failures, debris) interrupt you. 1-3 stars per mission.
+- **Engineer mode** (`🔧` in the top bar, or `?expert`): the full mission-design console described below.
+
+Both modes use the same engine. Simple-mode choices map to real catalog components, and a test checks that the crew's "must fix" advice matches the engine's launch errors for every combination.
+
+## Game loop (engineer mode)
 
 1. **Brief**: pick a customer scenario (first CubeSat, wildfire watch, sandbox).
 2. **Design**: four roles split the decisions:
@@ -30,7 +37,9 @@ packages/engine   Pure TypeScript mission model, shared by client and server
   src/validate.ts   design review: errors and warnings with explanations
   src/simulate.ts   seeded month-by-month operations + Monte Carlo
   src/score.ts      score, grade, lessons learned
-apps/web          React + react-three-fiber client (Hangar, Orbit and Launch 3D scenes)
+apps/web          React + react-three-fiber client
+  src/kid/          simple mode: steps, crew advice, flight mini-game
+  src/scenes/       Hangar, Orbit and Launch 3D scenes
 apps/server       Socket.io rooms for up to 4 players + authoritative leaderboard
 deploy            Dockerfile, docker-compose, Caddy (automatic HTTPS)
 ```
@@ -89,10 +98,11 @@ Earth textures are NASA Blue Marble / Black Marble (public domain).
 ## Для команды
 
 - **Движок** (`packages/engine`): формулы, баланс, сценарии, тесты. Любую цифру в игре меняем в `catalog.ts`.
-- **UI** (`apps/web/src/ui`): панели, поток мастера, отчёт.
+- **Простой режим** (`apps/web/src/kid`): шаги, советы команды, мини-игра полёта — главный экран игры.
+- **UI инженера** (`apps/web/src/ui`): панели, проверка, отчёт.
 - **3D** (`apps/web/src/scenes`): ангар, орбита, запуск.
 - **Сервер и деплой** (`apps/server`, `deploy`).
 
 Правило: игровая логика живёт только в `engine`, а клиент и сервер её только вызывают.
 
-**Русский язык — временный.** Весь перевод лежит в `apps/web/src/i18n/`, переключатель RU/EN — справа в верхней панели. Новые строки в UI оборачивайте в `t('English text')` и добавляйте перевод в `ru.ts`. Перед сабмитом: удалить `ru.ts` и `LangToggle` в `App.tsx`, а в `i18n/index.ts` оставить только английскую ветку.
+**Русский язык — временный.** Весь перевод лежит в `apps/web/src/i18n/`, переключатель RU/EN — справа в верхней панели. Новые строки в UI оборачивайте в `t('English text')` и добавляйте перевод в `ru.ts`. Перед сабмитом: удалить `ru.ts`, `ru-kid.ts` и `LangToggle` в `App.tsx`, а в `i18n/index.ts` оставить только английскую ветку.

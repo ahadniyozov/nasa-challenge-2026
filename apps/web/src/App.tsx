@@ -20,7 +20,7 @@ const STEPS: { id: Phase; label: string }[] = [
 ];
 
 /** TEMPORARY: language switch for the team. Remove together with src/i18n/ru.ts. */
-function LangToggle() {
+export function LangToggle() {
   const { lang, setLang } = useLang();
   return (
     <div className="lang-toggle">
@@ -31,7 +31,7 @@ function LangToggle() {
   );
 }
 
-export default function App() {
+export default function App({ onSimple }: { onSimple?: () => void }) {
   const { phase, setPhase, budgets, design, sim } = useGame();
   const { t, name } = useT();
   const [view, setView] = useState<'hangar' | 'orbit'>('hangar');
@@ -56,6 +56,7 @@ export default function App() {
           {phase === 'design' && <button className="link" onClick={() => setPhase('brief')}>{t('change')}</button>}
         </div>
         <LangToggle />
+        {onSimple && <button className="link" onClick={onSimple}>{t('🎮 Simple mode')}</button>}
       </header>
 
       <main className={`layout phase-${phase}`}>
