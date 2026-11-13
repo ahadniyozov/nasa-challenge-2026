@@ -20,7 +20,8 @@ function Bar({ label, used, limit, text, invert = false, why }: { label: string;
 }
 
 export function ResourcePanel() {
-  const { budgets: b, issues, launchable, votes, vote, mc, runMonteCarlo, launch } = useGame();
+  const { budgets: b, issues, launchable, votes, vote, mc, runMonteCarlo, launch, loadExample } = useGame();
+  const errorCount = issues.filter((i) => i.severity === 'error').length;
   if (!b) return <div className="panel">{issues[0]?.message}</div>;
   const allGo = ROLES.every((r) => votes[r.id] === true);
   const spend = b.cost.totalM + b.cost.reserveM;
@@ -41,7 +42,7 @@ export function ResourcePanel() {
       <Bar label="Lifetime" used={b.lifetime.expectedYears} limit={b.lifetime.requiredYears} invert text={`${yr(b.lifetime.expectedYears)} / ${b.lifetime.requiredYears} yr needed`} />
       <Bar label="Expected science" used={b.science.expectedTotal} limit={Math.max(1, b.scenario.requirements.minScience)} invert text={`${Math.round(b.science.expectedTotal)} / ${b.scenario.requirements.minScience} pts`} />
 
-      <h3>Design review</h3>
+      <h3>Design review {errorCount > 0 && <span className="err-count">{errorCount} to fix</span>}</h3>
       {issues.length === 0 && <div className="issue ok">✓ No problems found. Ready for the Go / No-Go poll.</div>}
       <div className="issues">
         {issues.map((i, k) => (
@@ -51,6 +52,8 @@ export function ResourcePanel() {
           </div>
         ))}
       </div>
+
+      <button className="btn ghost small" onClick={loadExample}>💡 Stuck? Load a working example</button>
 
       <h3>Risk analysis</h3>
       <button className="btn ghost" onClick={runMonteCarlo}>Simulate 400 missions</button>
@@ -65,6 +68,7 @@ export function ResourcePanel() {
       )}
 
       <h3>Go / No-Go poll</h3>
+      {!launchable && <p className="hint">Voting opens when the design review has no ⛔ errors. Each role tab (FD / ENG / SCI / OPS) on the left controls different parts.</p>}
       <div className="poll">
         {ROLES.map((r) => (
           <div key={r.id} className="poll-row">
@@ -75,7 +79,7 @@ export function ResourcePanel() {
         ))}
       </div>
       <button className="btn launch" disabled={!launchable || !allGo} onClick={launch}>
-        {!launchable ? 'Fix errors to launch' : allGo ? '🚀 LAUNCH' : 'Waiting for all GO'}
+        {!launchable ? `Fix ${errorCount} error${errorCount === 1 ? '' : 's'} to launch` : allGo ? '🚀 LAUNCH' : `Waiting for GO (${ROLES.filter((r) => votes[r.id] === true).length}/4)`}
       </button>
     </div>
   );

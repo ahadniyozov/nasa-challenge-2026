@@ -14,7 +14,7 @@ export const STARTER_DESIGNS: Record<string, MissionDesign> = {
   },
   sandbox: {
     scenarioId: 'sandbox', busId: 'smallsat', orbitId: 'sso-550', launcherId: 'rideshare',
-    components: ['solar-deploy-l', 'batt-l', 'x-band', 'adcs-rw', 'obc-rad', 'cam-hires'],
+    components: ['solar-deploy-l', 'batt-l', 'batt-l', 'ka-band', 'x-band', 'adcs-rw', 'obc-rad', 'cam-hires'],
     groundStationIds: ['svalbard', 'troll'], reservePct: 0.2,
   },
 };
@@ -24,4 +24,15 @@ export const WILDFIRE_REFERENCE: MissionDesign = {
   scenarioId: 'wildfire', busId: 'smallsat', orbitId: 'sso-550', launcherId: 'rideshare',
   components: ['solar-deploy-l', 'batt-l', 'x-band', 's-band', 'adcs-rw', 'obc-rad', 'cam-thermal', 'spectro', 'prop-cold'],
   groundStationIds: ['svalbard', 'alaska', 'krasnoyarsk'], reservePct: 0.15,
+};
+
+/** Working example per scenario, offered by the "Show a working example" button. */
+export const EXAMPLE_DESIGNS: Record<string, MissionDesign> = {
+  'first-cubesat': {
+    scenarioId: 'first-cubesat', busId: 'cubesat-3u', orbitId: 'sso-550', launcherId: 'rideshare',
+    components: ['solar-body', 'batt-s', 's-band', 'adcs-rw', 'obc-cots', 'cam-cubesat'],
+    groundStationIds: ['krasnoyarsk', 'svalbard'], reservePct: 0.15,
+  },
+  wildfire: WILDFIRE_REFERENCE,
+  sandbox: STARTER_DESIGNS.sandbox,
 };

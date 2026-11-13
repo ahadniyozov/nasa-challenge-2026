@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import {
-  canLaunch, computeBudgets, monteCarlo, reviewDesign, scoreMission, simulateMission, STARTER_DESIGNS,
+  canLaunch, computeBudgets, EXAMPLE_DESIGNS, monteCarlo, reviewDesign, scoreMission, simulateMission, STARTER_DESIGNS,
   type Budgets, type Issue, type MissionDesign, type MonteCarloResult, type Score, type SimResult,
 } from '@mission/engine';
 
@@ -42,6 +42,7 @@ interface State extends Derived {
 
   setPhase(p: Phase): void;
   startScenario(id: string): void;
+  loadExample(): void;
   update(patch: Partial<MissionDesign>): void;
   addComponent(id: string): void;
   removeComponent(index: number): void;
@@ -87,6 +88,10 @@ export const useGame = create<State>((set, get) => {
     startScenario: (id) => {
       change(structuredClone(STARTER_DESIGNS[id]));
       set({ phase: 'design', sim: null, score: null });
+    },
+    loadExample: () => {
+      const ex = EXAMPLE_DESIGNS[get().design.scenarioId];
+      if (ex) change(structuredClone(ex));
     },
     update: (patch) => change({ ...get().design, ...patch }),
     addComponent: (id) => change({ ...get().design, components: [...get().design.components, id] }),

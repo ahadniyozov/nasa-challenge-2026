@@ -139,3 +139,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   .panel { border: 0; border-top: 1px solid var(--line); }
   .steps { display: none; }
 }
+
+.err-count { margin-left: 8px; color: var(--bad); font-weight: 700; letter-spacing: 0; text-transform: none; }
+.btn.small { margin-top: 10px; padding: 7px 10px; font-size: 13px; font-weight: 600; width: 100%; }

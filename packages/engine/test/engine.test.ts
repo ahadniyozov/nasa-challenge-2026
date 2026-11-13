@@ -62,3 +62,19 @@ describe('simulation', () => {
     expect(['S', 'A', 'B', 'C', 'D', 'F']).toContain(s.grade);
   });
 });
+
+describe('scenarios are winnable', () => {
+  it('every example design is launchable and usually succeeds', async () => {
+    const { EXAMPLE_DESIGNS } = await import('../src');
+    for (const [id, d] of Object.entries(EXAMPLE_DESIGNS)) {
+      const issues = reviewDesign(computeBudgets(d), d.reservePct);
+      expect(issues.filter((i) => i.severity === 'error'), id).toEqual([]);
+      expect(monteCarlo(d, 200).successProbability, id).toBeGreaterThan(0.6);
+    }
+  });
+  it('tutorial starter has exactly one error to fix', () => {
+    const d = STARTER_DESIGNS['first-cubesat'];
+    const errors = reviewDesign(computeBudgets(d), d.reservePct).filter((i) => i.severity === 'error');
+    expect(errors.map((e) => e.message)).toHaveLength(1);
+  });
+});

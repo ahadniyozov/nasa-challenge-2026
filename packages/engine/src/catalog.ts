@@ -27,7 +27,7 @@ export const LAUNCHERS: LaunchVehicle[] = [
 ];
 
 export const BUSES: Bus[] = [
-  { id: 'cubesat-3u', name: 'CubeSat 3U', dryMassKg: 2.5, maxPayloadKg: 2.5, slots: 4, baseLoadW: 2, costM: 0.15, designLifeYears: 2, reliability: 0.97,
+  { id: 'cubesat-3u', name: 'CubeSat 3U', dryMassKg: 2.5, maxPayloadKg: 3.5, slots: 5, baseLoadW: 2, costM: 0.15, designLifeYears: 2, reliability: 0.97,
     blurb: '10x10x34 cm. Cheap and fast to build; room for one small instrument.' },
   { id: 'cubesat-12u', name: 'CubeSat 12U', dryMassKg: 9, maxPayloadKg: 12, slots: 8, baseLoadW: 5, costM: 0.8, designLifeYears: 3, reliability: 0.98,
     blurb: 'A large CubeSat: deployable panels and a capable payload.' },
@@ -39,7 +39,7 @@ export const BUSES: Bus[] = [
 
 export const COMPONENTS: Component[] = [
   // Power generation
-  { id: 'solar-body', category: 'solar', name: 'Body-mounted solar cells', massKg: 0.3, powerW: 0, costM: 0.05, reliability: 0.995, slots: 0, areaM2: 0.06, efficiency: 0.29,
+  { id: 'solar-body', category: 'solar', name: 'Body-mounted solar cells', massKg: 0.3, powerW: 0, costM: 0.05, reliability: 0.995, slots: 0, areaM2: 0.08, efficiency: 0.29,
     blurb: 'Cells glued to the sides. Light and simple, but small area.' },
   { id: 'solar-deploy-s', category: 'solar', name: 'Deployable panels (small)', massKg: 1.2, powerW: 0, costM: 0.25, reliability: 0.98, slots: 1, areaM2: 0.25, efficiency: 0.3,
     blurb: 'Fold-out wings. More power - and a mechanism that must unfold in space.' },
@@ -57,8 +57,8 @@ export const COMPONENTS: Component[] = [
   // Comms
   { id: 'uhf', category: 'comms', name: 'UHF radio', massKg: 0.1, powerW: 2, costM: 0.01, reliability: 0.98, slots: 1, band: 'UHF', downlinkMbps: 0.0096,
     blurb: '9.6 kbit/s. Enough for telemetry - far too slow for images.' },
-  { id: 's-band', category: 'comms', name: 'S-band transmitter', massKg: 0.4, powerW: 8, costM: 0.15, reliability: 0.98, slots: 1, band: 'S', downlinkMbps: 2,
-    blurb: '~2 Mbit/s. Standard choice for small science missions.' },
+  { id: 's-band', category: 'comms', name: 'S-band transmitter', massKg: 0.4, powerW: 8, costM: 0.15, reliability: 0.98, slots: 1, band: 'S', downlinkMbps: 10,
+    blurb: '~10 Mbit/s. Standard choice for small science missions.' },
   { id: 'x-band', category: 'comms', name: 'X-band transmitter', massKg: 1.2, powerW: 25, costM: 0.6, reliability: 0.97, slots: 1, band: 'X', downlinkMbps: 150,
     blurb: '~150 Mbit/s. What imaging satellites use to dump big data.' },
   { id: 'ka-band', category: 'comms', name: 'Ka-band high-rate system', massKg: 8, powerW: 90, costM: 3, reliability: 0.97, slots: 2, band: 'Ka', downlinkMbps: 1200,
@@ -84,7 +84,7 @@ export const COMPONENTS: Component[] = [
     blurb: 'Classic thrusters + fuel tank for big satellites.' },
   // Instruments
   { id: 'cam-cubesat', category: 'instrument', name: 'Compact RGB camera', massKg: 0.4, powerW: 4, costM: 0.1, reliability: 0.97, slots: 1,
-    dataRateMbps: 40, dutyCycle: 0.05, scienceValue: 10, resolutionAt500m: 30, requiredPointingDeg: 1, tags: ['imaging'],
+    dataRateMbps: 20, dutyCycle: 0.01, scienceValue: 10, resolutionAt500m: 30, requiredPointingDeg: 1, tags: ['imaging'],
     blurb: 'Pocket camera for space: 30 m pixels at 500 km.' },
   { id: 'cam-thermal', category: 'instrument', name: 'Thermal infrared imager', massKg: 1.5, powerW: 10, costM: 0.6, reliability: 0.95, slots: 2,
     dataRateMbps: 30, dutyCycle: 0.1, scienceValue: 25, resolutionAt500m: 60, requiredPointingDeg: 1, tags: ['imaging', 'thermal', 'fire'],
