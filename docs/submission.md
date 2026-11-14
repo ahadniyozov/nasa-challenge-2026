@@ -35,9 +35,9 @@ GO / NO-GO: Mission Control is a browser game where you design a real satellite 
 | [NASA Black Marble](https://www.earthdata.nasa.gov/data/projects/black-marble) | City lights in Earth's shadow |
 | [NASA CubeSat 101](https://www.nasa.gov/wp-content/uploads/2017/03/nasa_csli_cubesat_101_508.pdf) | Part sizes, masses and prices; rideshare launch; mission 1 |
 | [NASA Small Spacecraft Systems Virtual Institute](https://www.nasa.gov/smallsat-institute/) | Typical small-satellite subsystems |
-| NASA: Design and Develop Science Missions (challenge resource) | Mission 2: instrument, orbit and data link vs. customer needs |
-| NASA Mission Design Lab (challenge resource) | Missions 3, 5, 6: inclination, radiation, trade studies |
-| NASA Mission Viz (challenge resource) | Mission 4: geostationary vs. low orbit |
+| [NASA: Design and Develop Science Missions](https://www.nasa.gov/wp-content/uploads/2025/04/250323-design-and-develop-science-mission.pdf) | Mission 2: instrument, orbit and data link vs. customer needs |
+| [NASA Goddard Mission Design Lab](https://etd.gsfc.nasa.gov/capabilities/integrated-design-center/mission-design-lab/) | Missions 3, 5, 6: inclination, radiation, trade studies |
+| [NASA Mission Viz](https://nasa.github.io/mission-viz/) | Mission 4: geostationary vs. low orbit |
 | [CubeSat Launch Initiative](https://www.nasa.gov/kennedy/launch-services-program/cubesat-launch-initiative/) · [FIRMS](https://www.earthdata.nasa.gov/data/tools/firms) · [ICESat-2](https://science.nasa.gov/mission/icesat-2/) · [GOES](https://science.nasa.gov/mission/goes) · [Van Allen Probes](https://science.nasa.gov/mission/van-allen-probes/) · [Landsat 9](https://science.nasa.gov/mission/landsat-9/) | "In real life" cards after each mission |
 
 All facts on the cards were checked against these pages on 2026-11-14. The game uses no NASA logos and no photos of people.
