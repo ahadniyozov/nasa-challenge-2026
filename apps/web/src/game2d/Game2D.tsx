@@ -6,6 +6,7 @@ import { useT, type T } from '../i18n';
 import { analyse, slotsFor, type Analysis, type Build, type SlotId } from './config';
 import { RealityCard, Sketch } from '../content/RealityCard';
 import { REAL_MISSIONS } from '../content/realMissions';
+import { PART_PHOTOS, photoUrl, sourceUrl } from '../content/partPhotos';
 import { ResourcesScreen } from '../content/ResourcesScreen';
 import { sfx } from '../game3d/audio';
 import { SoundToggle } from '../game3d/SoundToggle';
@@ -317,6 +318,10 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mis
   const slots = useMemo(() => slotsFor(m), [m]);
   const busName = { 'cubesat-3u': 'CubeSat 3U', 'cubesat-12u': 'CubeSat 12U', smallsat: 'SmallSat 150 kg', 'medium-bus': 'Medium bus 800 kg' }[a.design.busId] ?? a.design.busId;
   const pct = (v: number) => `${Math.round(v * 100)}%`;
+  // the real NASA photo next to the drawing: the last part picked, or the chosen option of the open slot
+  const [shownId, setShown] = useState<string | null>(null);
+  const focusPhotoId = shownId && PART_PHOTOS[shownId] ? shownId : focus ? build[focus] : null;
+  const photo = focusPhotoId ? PART_PHOTOS[focusPhotoId] : undefined;
   // the rocket and the budget block a launch; power and battery problems are the player's risk to take
   const overLimit = a.gauges.filter((g) => g.level === 'bad').map((g) => t(g.label).toLowerCase());
 
@@ -326,15 +331,16 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mis
     const open = focus === id;
     return (
       <div key={id} className={`g2d-slot ${open ? 'open' : ''}`}>
-        <button className="g2d-slot-head" aria-expanded={open} onClick={() => setFocus(open ? null : id)}>
+        <button className="g2d-slot-head" aria-expanded={open} onClick={() => { setFocus(open ? null : id); setShown(null); }}>
           <b>{t(slot.title)}</b><span className="v">{t(chosen.title)}</span>
           <svg className="chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
         </button>
         {open && (
           <div className="g2d-opts" role="radiogroup" aria-label={t(slot.title)}>
             {slot.options.map((o) => (
-              <button key={o.id} role="radio" aria-checked={build[id] === o.id} className={`g2d-opt ${build[id] === o.id ? 'on' : ''}`} onClick={() => setBuild({ ...build, [id]: o.id })}>
+              <button key={o.id} role="radio" aria-checked={build[id] === o.id} className={`g2d-opt ${build[id] === o.id ? 'on' : ''} ${PART_PHOTOS[o.id] ? 'has-photo' : ''}`} onClick={() => { setBuild({ ...build, [id]: o.id }); setShown(o.id); }}>
                 <b>{t(o.title)}</b>{o.text && <small>{t(o.text)}</small>}
+                {PART_PHOTOS[o.id] && <img src={photoUrl(PART_PHOTOS[o.id])} alt="" loading="lazy" />}
               </button>
             ))}
           </div>
@@ -350,9 +356,17 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mis
       <div className="g2d-art">
         {m.slots.length < 6 && <p className="g2d-hint">{t('On this mission you choose only {n} things - the rest is ready.', { n: m.slots.length })}</p>}
         <SatelliteArt build={build} mission={m} />
-        <div className="g2d-titleblock">
-          <div><span>{t('Platform')}</span><b>{busName}</b></div>
-          <div><span>{t('Mass')}</span><b>{Math.round(a.flight.massKg)} {t('kg')}</b></div>
+        <div className="g2d-art-foot">
+          <div className="g2d-titleblock">
+            <div><span>{t('Platform')}</span><b>{busName}</b></div>
+            <div><span>{t('Mass')}</span><b>{Math.round(a.flight.massKg)} {t('kg')}</b></div>
+          </div>
+          {photo && (
+            <figure className="g2d-photo">
+              <img src={photoUrl(photo)} alt={t(photo.caption)} />
+              <figcaption>{t(photo.caption)}. <a className="c-link" href={sourceUrl(photo)} target="_blank" rel="noopener noreferrer">{t('Photo: {credit}', { credit: photo.credit })}</a></figcaption>
+            </figure>
+          )}
         </div>
       </div>
       <div className="g2d-slots">

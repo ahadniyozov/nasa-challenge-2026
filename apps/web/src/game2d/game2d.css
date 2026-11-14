@@ -100,7 +100,7 @@
 }
 .g2d-sat { width: min(100%, 620px); height: auto; max-height: 100%; }
 .g2d-titleblock {
-  position: absolute; left: 20px; bottom: 20px; background: var(--sheet); border: 1px solid var(--ink);
+  background: var(--sheet); border: 1px solid var(--ink);
   display: grid; grid-template-columns: auto auto; font-size: 14px;
 }
 .g2d-titleblock div { padding: 6px 12px; border-right: 1px solid var(--rule); }
@@ -192,7 +192,6 @@
   .g2d-reqs .res { width: auto; }
   .g2d-findings li { flex-direction: column; align-items: stretch; gap: 10px; }
   .g2d-later { white-space: normal; }
-  .g2d-titleblock { position: static; margin-top: 6px; }
   .g2d-hint { display: none; }
   .g2d-countdown { font-size: 24px; }
   .g2d-countdown.big { font-size: 96px; }
@@ -200,4 +199,21 @@
 @media (prefers-reduced-motion: reduce) {
   .g2d-countdown { animation: none; }
   .g2d-gauge .track div, .g2d-slot-head .chev { transition: none; }
+}
+
+/* real NASA photos of the parts */
+.g2d-opt.has-photo { grid-template-columns: 18px minmax(0, 1fr) 64px; }
+.g2d-opt.has-photo img { grid-column: 3; grid-row: 1 / span 2; width: 64px; height: 48px; object-fit: cover; border-radius: 3px; align-self: center; background: var(--paper); }
+.g2d-art-foot { align-self: stretch; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex: none; }
+.g2d-art .g2d-sat { flex: 1 1 auto; min-height: 0; }
+.g2d-art .g2d-titleblock { position: static; }
+.g2d-photo { margin: 0; display: grid; grid-template-columns: 200px 180px; gap: 12px; background: var(--sheet); border: 1px solid var(--ink); padding: 6px; }
+.g2d-photo img { display: block; width: 200px; height: 136px; object-fit: cover; }
+.g2d-photo figcaption { font-size: 13px; line-height: 1.4; color: var(--steel); align-self: end; padding-bottom: 2px; }
+.g2d-photo .c-link { font-weight: 500; }
+@media (max-width: 960px) {
+  .g2d-art { height: auto; min-height: 36vh; }
+  .g2d-art-foot { flex-direction: column; align-items: stretch; }
+  .g2d-photo { grid-template-columns: 140px minmax(0, 1fr); }
+  .g2d-photo img { width: 140px; height: 100px; }
 }

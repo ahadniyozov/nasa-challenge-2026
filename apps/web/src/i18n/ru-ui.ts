@@ -54,4 +54,20 @@ export const RU_UI: Record<string, string> = {
   'Fly over cities to photograph them, then over a ground station to send the photos home.': 'Пролетай над городами, потом над наземной станцией, чтобы отправить снимки домой.',
   // launch
   'Spacecraft separation. In orbit': 'Отделение спутника. Он на орбите', '{rocket} rocket to {km} km': 'Ракета «{rocket}» на высоту {km} км',
+  // real NASA photos of the parts
+  'Photo: {credit}': 'Фото: {credit}', 'Photos of real hardware': 'Фото настоящей техники',
+  'Neutron-1, a 3U CubeSat, before flight (2020)': 'Neutron-1, CubeSat 3U, перед полётом (2020)',
+  'Flight battery of the Deep Impact spacecraft before installation (2004)': 'Лётная батарея зонда Deep Impact перед установкой (2004)',
+  'Deep Space Network antenna DSS-53 in Madrid (2022)': 'Антенна DSS-53 сети дальней связи NASA в Мадриде (2022)',
+  'A GRACE-FO satellite in the clean room (2018)': 'Спутник GRACE-FO в чистой комнате (2018)',
+  'RainCube, a 6U CubeSat, with its panels and antenna deployed (2018)': 'RainCube, CubeSat 6U, с раскрытыми панелями и антенной (2018)',
+  'Solar array deployment test of the GPM satellite': 'Испытание раскрытия солнечной панели спутника GPM',
+  'High-gain antenna of the Dawn spacecraft (2009)': 'Остронаправленная антенна зонда Dawn (2009)',
+  'AQT-D, a CubeSat with a water thruster, leaves the Space Station (2019)': 'AQT-D, CubeSat с водяным двигателем, отделяется от МКС (2019)',
+  'TIRS thermal infrared sensor of the Landsat 8 satellite': 'Тепловой инфракрасный датчик TIRS спутника Landsat 8',
+  'RAD radiation detector of the Curiosity rover (2010)': 'Детектор радиации RAD марсохода Curiosity (2010)',
+  'Magnetometer on its boom, Gemini 12 experiment (1966)': 'Магнитометр на штанге, эксперимент Gemini 12 (1966)',
+  'Rocket Lab Electron with two NASA TROPICS CubeSats (2023)': 'Ракета Electron с двумя CubeSat NASA TROPICS (2023)',
+  'Atlas V with the Landsat 9 satellite at the launch pad (2021)': 'Atlas V со спутником Landsat 9 на стартовой площадке (2021)',
+  'SLS rocket and Orion for Artemis I at Launch Pad 39B (2022)': 'Ракета SLS и корабль Orion для Artemis I на площадке 39B (2022)',
 };
