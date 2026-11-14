@@ -54,6 +54,10 @@ export const RU_UI: Record<string, string> = {
   'Fly over cities to photograph them, then over a ground station to send the photos home.': 'Пролетай над городами, потом над наземной станцией, чтобы отправить снимки домой.',
   // launch
   'Spacecraft separation. In orbit': 'Отделение спутника. Он на орбите', '{rocket} rocket to {km} km': 'Ракета «{rocket}» на высоту {km} км',
+  // 3D launch
+  Liftoff: 'Старт', 'Stage separation': 'Отделение ступени', 'Fairing separation': 'Сброс обтекателя', 'Spacecraft separation': 'Отделение спутника',
+  Altitude: 'Высота', Speed: 'Скорость', 'km/h': 'км/ч', 'Launch events': 'События запуска',
+  'Click or press any key to skip': 'Нажми на экран или любую клавишу, чтобы пропустить',
   // 3D
   'Drag to turn the satellite.': 'Потяни, чтобы повернуть спутник.',
   // real NASA photos of the parts
