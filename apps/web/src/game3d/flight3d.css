@@ -1,5 +1,6 @@
 /* 3D flight: overlays over the WebGL canvas (the HUD itself is the shared 2D one) */
 .g3d-flight canvas { touch-action: none; }
 .g3d-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
-.g3d-north { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); z-index: 2; pointer-events: none;
-  background: rgba(4, 8, 28, 0.6); color: #cfe6ff; font: 800 13px system-ui, sans-serif; padding: 4px 6px; border-radius: 4px; }
+.g3d-north { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 2; pointer-events: none;
+  background: var(--space-panel); border: 1px solid var(--space-line); color: var(--space-text);
+  font: 600 14px 'Barlow', system-ui, sans-serif; padding: 5px 10px; border-radius: 6px; }

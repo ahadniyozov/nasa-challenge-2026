@@ -28,14 +28,23 @@ function HangarCameraRig({
   const goalTarget = useMemo(() => new THREE.Vector3(), []);
   const animLeft = useRef(0);
 
+  const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
   useEffect(() => {
-    const { target, camPos } = getSlotFocusTarget(focus, build, mission);
-    goalTarget.set(target[0], target[1], target[2]);
-    // the build screen shows the model in a panel, not full screen: stand a bit further back from a focused part
-    goalPos.set(camPos[0], camPos[1], camPos[2]);
-    if (focus) goalPos.sub(goalTarget).multiplyScalar(1.7).add(goalTarget);
-    animLeft.current = 0.65;
-  }, [focus, build.body, build.panels, build.camera, build.antenna, mission, goalPos, goalTarget]);
+    // The panel is small, so never zoom into a part: keep the whole satellite in view and only
+    // turn the camera to the side of the chosen part (the part itself glows).
+    const whole = getSlotFocusTarget(null, build, mission);
+    const center = new THREE.Vector3(...whole.target);
+    const dist = new THREE.Vector3(...whole.camPos).distanceTo(center) * Math.max(1, 1.15 / aspect);
+    const dir = new THREE.Vector3(...whole.camPos).sub(center);
+    if (focus) {
+      const part = getSlotFocusTarget(focus, build, mission);
+      dir.set(...part.camPos).sub(new THREE.Vector3(...part.target));
+      dir.y = Math.max(dir.y, dir.length() * 0.25); // a little from above, so the floor-side parts stay readable
+    }
+    goalTarget.copy(center);
+    goalPos.copy(center).add(dir.normalize().multiplyScalar(dist));
+    animLeft.current = 0.8;
+  }, [focus, build.body, build.panels, build.camera, build.antenna, mission, goalPos, goalTarget, aspect]);
 
   useFrame((_, dt) => {
     if (animLeft.current <= 0) return;

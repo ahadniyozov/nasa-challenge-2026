@@ -260,7 +260,7 @@ export function SatelliteModel({
         {/* Top and bottom structural end-frames */}
         {[-1, 1].map((dir) => (
           <mesh key={dir} position={[0, dir * (h / 2 - 0.024), 0]}>
-            <boxGeometry args={[w * 1.016, 0.044, d * 1.016]} />
+            <boxGeometry args={[w + 0.02, 0.044, d + 0.02]} />
             <meshStandardMaterial color="#2b3348" metalness={0.65} roughness={0.35} />
           </mesh>
         ))}
@@ -268,7 +268,7 @@ export function SatelliteModel({
         {[-1, 1].map((sx) =>
           [-1, 1].map((sz) => (
             <mesh key={`${sx}-${sz}`} position={[sx * (w / 2 - 0.012), 0, sz * (d / 2 - 0.012)]}>
-              <boxGeometry args={[0.032, h, 0.032]} />
+              <boxGeometry args={[0.032, h - 0.006, 0.032]} />
               <meshStandardMaterial color="#394460" metalness={0.65} roughness={0.35} />
             </mesh>
           )),

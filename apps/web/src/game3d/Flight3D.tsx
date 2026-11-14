@@ -45,7 +45,8 @@ export default function Flight3D({ p, m, build, onEnd, seed }: { p: FlightParams
         <Scene s={s} build={build} control={control} msgs={msgs} setHud={setHud} overlay={overlay} reachLabel={t('◀ your orbit never flies north of this line')} />
       </Canvas>
       <div ref={overlay} className="g3d-overlay" />
-      <div className="g3d-north">{t('◀ North')}</div>
+      {/* only the polar mission needs to know which side is north (the glaciers are there) */}
+      {m.farNorth && <div className="g3d-north">{t('◀ North')}</div>}
       <FlightHud p={p} m={m} hud={hud} control={control} />
     </div>
   );
