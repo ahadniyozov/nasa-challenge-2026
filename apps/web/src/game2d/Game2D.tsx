@@ -8,8 +8,19 @@ import { Flight2D, type FlightStats } from './Flight2D';
 import { Launch2D } from './Launch2D';
 import { MISSIONS, type Mission } from './missions';
 import { SatelliteArt } from './SatelliteArt';
+import { Career3D, Hangar3D, Launch3D } from '../game3d';
 
 type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build';
+
+function canUse3D(): boolean {
+  if (location.search.includes('2d')) return false;
+  try {
+    const c = document.createElement('canvas');
+    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
 
 // ---- progress (stars per mission), kept in this browser only
 const KEY = 'g2d-progress-v1';
@@ -32,6 +43,7 @@ export function Game2D({ links }: { links: React.ReactNode }) {
   const [runId, setRunId] = useState(0);
   const [stars, setStars] = useState<Record<string, number>>(loadStars);
   const [openAll, setOpenAll] = useState(() => location.search.includes('all'));
+  const [is3D] = useState(canUse3D);
   const a = useMemo(() => analyse(build, mission), [build, mission]);
 
   const onEnd = useCallback((s: FlightStats) => { setStats(s); setPhase('report'); }, []);
@@ -58,15 +70,21 @@ export function Game2D({ links }: { links: React.ReactNode }) {
           {links}
         </div>
       </header>
-      {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}
+      {phase === 'career' && (is3D
+        ? <Career3D stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />
+        : <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />)}
       {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} />}
-      {phase === 'launch' && <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />}
+      {phase === 'launch' && (is3D
+        ? <Launch3D key={runId} build={build} mission={mission} onDone={() => setPhase('flight')} />
+        : <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />)}
       {phase === 'flight' && <Flight2D key={runId} p={a.flight} m={mission} onEnd={onEnd} />}
       {phase === 'report' && stats && (
         <Report tr={tr} m={mission} a={a} stats={stats} isTest={isTest} onStars={record} onFix={toBuild} onAgain={() => fly(isTest)}
           onNext={mission.num < MISSIONS.length ? () => pick(MISSIONS[mission.num]) : undefined} onCareer={() => setPhase('career')} />
       )}
-      {phase === 'build' && <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}
+      {phase === 'build' && (is3D
+        ? <Hangar3D m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />
+        : <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />)}
     </div>
   );
 }
