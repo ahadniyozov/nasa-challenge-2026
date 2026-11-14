@@ -5,10 +5,14 @@ import { KidApp } from './kid/KidApp';
 import { RunnerGame } from './runner/RunnerGame';
 import { Game2D } from './game2d/Game2D';
 import { useT } from './i18n';
+import { installClickSound } from './game3d/audio';
 import './styles.css';
 import './kid/kid.css';
 import './runner/runner.css';
 import './game2d/game2d.css';
+import './content/content.css';
+
+installClickSound();
 
 type Mode = 'game2d' | 'runner' | 'simple' | 'expert';
 

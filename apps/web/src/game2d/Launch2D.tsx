@@ -2,6 +2,7 @@
 // The rocket's size follows the chosen launcher; the target altitude follows the chosen orbit. Click / any key skips.
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
+import { sfx } from '../game3d/audio';
 import type { Build } from './config';
 
 const ROCKET: Record<string, { w: number; h: number; boosters: boolean; color: string; name: string }> = {
@@ -36,6 +37,7 @@ export function Launch2D({ build, onDone }: { build: Build; onDone(): void }) {
     };
     resize();
     window.addEventListener('resize', resize);
+    let beeps = 0, roared = false;
     const finish = () => { if (!finished) { finished = true; doneRef.current(); } };
     const cap = (s: string) => { if (s !== lastCap) { lastCap = s; setCaption(s); } };
 
@@ -158,6 +160,10 @@ export function Launch2D({ build, onDone }: { build: Build; onDone(): void }) {
         ctx.fillStyle = '#f1b93a'; ctx.fillRect(-9 * scale, -9 * scale, 18 * scale, 18 * scale);
         ctx.restore();
       }
+
+      // sounds: a beep each countdown second, engine roar at lift-off
+      if (tt < COUNT && Math.floor(tt) >= beeps) { beeps++; sfx.countdown(); }
+      if (tt >= COUNT && !roared) { roared = true; sfx.countdown(true); sfx.liftoff(); }
 
       // captions
       if (tt < COUNT) cap(String(COUNT - Math.floor(tt)));

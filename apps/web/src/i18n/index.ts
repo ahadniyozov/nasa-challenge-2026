@@ -9,8 +9,9 @@ import { RU_KID } from './ru-kid';
 import { RU_RUNNER } from './ru-runner';
 import { RU_2D } from './ru-2d';
 import { RU_MISSIONS } from './ru-missions';
+import { RU_CONTENT } from './ru-content';
 
-const RU_UI: Record<string, string> = { ...RU_BASE, ...RU_KID, ...RU_RUNNER, ...RU_2D, ...RU_MISSIONS };
+const RU_UI: Record<string, string> = { ...RU_BASE, ...RU_KID, ...RU_RUNNER, ...RU_2D, ...RU_MISSIONS, ...RU_CONTENT };
 
 export type Lang = 'en' | 'ru';
 
@@ -24,7 +25,8 @@ function readSaved(): Lang | null {
 }
 
 export const useLang = create<{ lang: Lang; setLang(l: Lang): void }>((set) => ({
-  lang: readSaved() ?? 'ru',
+  // English is the default (judges); Russian stays behind the RU/EN toggle until the final build
+  lang: readSaved() ?? 'en',
   setLang: (lang) => {
     try { localStorage.setItem('lang', lang); } catch { /* private mode */ }
     document.documentElement.lang = lang;
