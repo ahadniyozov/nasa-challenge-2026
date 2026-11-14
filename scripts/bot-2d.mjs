@@ -24,8 +24,8 @@ async function run([id, patch, test = false, mode = 'safe']) {
         const s = window.__g2d;
         if (!s) return setTimeout(tick, 50);
         if (s.ended) return setTimeout(() => done({ ...s.st, delivered: Math.floor(s.delivered) }), 50);
-        const W = innerWidth, satX = W * 0.2;
-        const ahead = s.objs.filter((o) => !o.done && o.x > satX - 5).sort((a, b) => a.x - b.x);
+        const W = document.querySelector('.g2d-canvas').clientHeight, satX = W * 0.28; // vertical scroller: distances run along the height
+        const ahead = s.objs.filter((o) => !o.done && o.x > satX - 32).sort((a, b) => a.x - b.x);
         const tgt = ahead.find((o) => o.kind === 'target' && o.lane >= 0 && o.x < satX + W * 0.7);
         let want = tgt ? tgt.lane : 1;
         const danger = (l) => ahead.some((o) => o.kind === 'debris' && o.lane === l && o.x - satX < 160);

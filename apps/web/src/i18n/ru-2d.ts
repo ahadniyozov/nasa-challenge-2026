@@ -60,7 +60,7 @@ export const RU_2D: Record<string, string> = {
   // flight
   'fire photos delivered': 'фото пожаров доставлено', 'Year {n} of {m}': 'Год {n} из {m}',
   "🌑 Earth's shadow": '🌑 Тень Земли', '☀️ Sunlight - charging': '☀️ Солнце — зарядка', '📡 Sending photos home!': '📡 Отправляем фото домой!',
-  '↑ ↓ to change lane. Fly over 🔥 to photograph, then over 📡 to send photos home!': '↑ ↓ — сменить полосу. Пролетай над 🔥, чтобы снять, а потом над 📡, чтобы отправить фото домой!',
+  '← → to change lane. Fly over 🔥 to photograph, then over 📡 to send photos home!': '← → — сменить полосу. Пролетай над 🔥, чтобы снять, а потом над 📡, чтобы отправить фото домой!',
   '🔥 The air pulled the satellite down - it burned up': '🔥 Воздух стащил спутник вниз — он сгорел',
   '🪫 Battery empty - satellite asleep': '🪫 Батарея села — спутник уснул', '🌑 Too dark for this camera': '🌑 Этой камере слишком темно',
   '😴 Camera asleep': '😴 Камера спит', '💾 Memory full! Find a station': '💾 Память полна! Ищи станцию',

@@ -2,7 +2,7 @@
 .g2d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .g2d-flight .mini-track { height: 6px; background: #0a0f2e; border-radius: 6px; overflow: hidden; margin-top: 5px; }
 .g2d-flight .mini-track div { height: 100%; background: var(--r-accent); }
-.g2d-touch { position: absolute; inset: 64px 0 56px 0; display: flex; flex-direction: column; z-index: 4; }
+.g2d-touch { position: absolute; inset: 64px 0 56px 0; display: flex; flex-direction: row; z-index: 4; }
 .g2d-touch button { flex: 1; background: transparent; border: 0; color: transparent; font-size: 38px; cursor: pointer; }
 @media (hover: none) { .g2d-touch button { color: #ffffff22; } }
 
@@ -105,3 +105,13 @@
 .g2d-touch button.safe { position: absolute; right: 16px; bottom: 12px; width: 68px; height: 68px; flex: none; border-radius: 50%; background: #0b1440cc; border: 3px solid #ffd23f; color: #ffd23f; font-size: 30px; }
 .g2d-touch button.safe.on { background: #ffd23f; color: #0b1440; box-shadow: 0 0 22px #ffd23f; }
 .g2d-opt b { font-size: 14px; overflow-wrap: anywhere; hyphens: auto; }
+
+/* launch cinematic */
+.g2d-launch { cursor: pointer; }
+.g2d-countdown { position: absolute; left: 0; right: 0; top: 16%; text-align: center; font-size: 34px; font-weight: 900; color: #fff; text-shadow: 0 2px 14px #000a; animation: g2d-pop .35s ease-out; pointer-events: none; }
+.g2d-countdown.big { font-size: 120px; color: #ffd23f; }
+.g2d-launch-info { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: #0b1440cc; border: 2px solid var(--r-line); border-radius: 14px; padding: 6px 14px; font-weight: 800; color: var(--r-text); white-space: nowrap; }
+.g2d-skip { position: absolute; right: 16px; top: 14px; color: #ffffffaa; font-size: 13px; }
+@keyframes g2d-pop { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (max-width: 520px) { .g2d-countdown { font-size: 24px; } .g2d-countdown.big { font-size: 90px; } }
+.g2d-flight .r-tip { top: 128px; bottom: auto; }

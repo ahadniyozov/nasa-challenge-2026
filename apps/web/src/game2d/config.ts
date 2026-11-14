@@ -189,7 +189,7 @@ export function analyse(build: Build, m: Mission = MISSIONS[1]): Analysis {
     memory: mem.slots,
     hearts: 3 + (shield ? 1 : 0),
     laneSpeed: Math.max(0.6, Math.min(1.25, 1.35 - massKg / 140)),
-    debrisRate: b.orbit.kind === 'LEO' ? 1.3 : geo ? 0.35 : 1,
+    debrisRate: b.orbit.kind === 'LEO' ? 1.3 : geo ? 0.25 : 1,
     nightVision: info.nightVision,
     sharp: m.maxResolutionM === undefined || (b.science.bestResolutionM ?? 999) <= m.maxResolutionM,
     massKg,

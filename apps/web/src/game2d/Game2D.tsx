@@ -5,10 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT, type T } from '../i18n';
 import { analyse, slotsFor, type Analysis, type Build, type SlotId } from './config';
 import { Flight2D, type FlightStats } from './Flight2D';
+import { Launch2D } from './Launch2D';
 import { MISSIONS, type Mission } from './missions';
 import { SatelliteArt } from './SatelliteArt';
 
-type Phase = 'career' | 'brief' | 'flight' | 'report' | 'build';
+type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build';
 
 // ---- progress (stars per mission), kept in this browser only
 const KEY = 'g2d-progress-v1';
@@ -39,7 +40,7 @@ export function Game2D({ links }: { links: React.ReactNode }) {
     const m = MISSIONS.find((x) => x.id === id)!;
     setMission(m); setBuild({ ...(test ? m.test! : m.start), ...patch } as Build); setIsTest(test); setRunId((n) => n + 1); setPhase('flight');
   };
-  const fly = (test: boolean) => { setIsTest(test); setRunId((n) => n + 1); setPhase('flight'); };
+  const fly = (test: boolean) => { setIsTest(test); setRunId((n) => n + 1); setPhase('launch'); };
   const toBuild = (slot: SlotId | null) => { setFocus(slot); setPhase('build'); };
   const pick = (m: Mission) => { setMission(m); setBuild(m.start); setStats(null); setPhase('brief'); };
   const record = (n: number) => {
@@ -53,12 +54,13 @@ export function Game2D({ links }: { links: React.ReactNode }) {
       <header className="runner-top">
         <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' ? t('Mission Control') : `${mission.num}. ${t(mission.title)}`}</small></div>
         <div className="runner-links">
-          {phase !== 'career' && phase !== 'flight' && <button className="link" onClick={() => setPhase('career')}>{t('🗺️ All missions')}</button>}
+          {phase !== 'career' && phase !== 'flight' && phase !== 'launch' && <button className="link" onClick={() => setPhase('career')}>{t('🗺️ All missions')}</button>}
           {links}
         </div>
       </header>
       {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}
       {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} />}
+      {phase === 'launch' && <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />}
       {phase === 'flight' && <Flight2D key={runId} p={a.flight} m={mission} onEnd={onEnd} />}
       {phase === 'report' && stats && (
         <Report tr={tr} m={mission} a={a} stats={stats} isTest={isTest} onStars={record} onFix={toBuild} onAgain={() => fly(isTest)}
@@ -174,7 +176,7 @@ function lessonsFor(m: Mission, a: Analysis, s: FlightStats): Lesson[] {
   if (s.nightMissed >= 2) out.push({ text: '{n} targets passed in the dark. A normal camera needs sunlight - heat cameras and radiometers see at night.', params: { n: s.nightMissed }, slot: 'camera' });
   if (s.blurry > 0) out.push({ text: m.maxResolutionM !== undefined && m.maxResolutionM < 10 ? 'Only a telescope sees single buildings - and it must fly low.' : 'From this height the photos are too blurry. Fly lower.', slot: m.maxResolutionM !== undefined && m.maxResolutionM < 10 ? 'camera' : 'orbit' });
   if (s.hits >= 2) out.push({ text: 'Space junk hit the satellite {n} times. A shield adds one more life.', params: { n: s.hits }, slot: 'shield' });
-  if (out.length === 0 && s.delivered < m.goal) out.push({ text: 'Fly over more targets: change lanes with ↑ ↓.', slot: m.slots[0] });
+  if (out.length === 0 && s.delivered < m.goal) out.push({ text: 'Fly over more targets: change lanes with ← →.', slot: m.slots[0] });
   // lessons about locked parts still explain what happened, just without a 'change' button
   return out.map((l) => (can(l.slot) ? l : { ...l, locked: true }));
 }

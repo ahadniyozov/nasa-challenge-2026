@@ -1,5 +1,5 @@
-// 2D side-scroller: the satellite flies right over a scrolling map of the mission's part of Earth.
-// 3 lanes (↑ ↓). Targets are recorded when you pass over them; data counts only after a ground station.
+// 2D vertical scroller: the satellite flies up over a scrolling map of the mission's part of Earth.
+// 3 vertical lanes (← →). Targets are recorded when you pass over them; data counts only after a ground station.
 // Each mission adds rules: targets out of the orbit's reach, solar storms (safe mode), wear-out.
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
@@ -27,9 +27,11 @@ export interface FlightStats {
 type Kind = 'target' | 'debris' | 'station';
 interface Obj { kind: Kind; lane: number; x: number; done: boolean; spin: number }
 
-const LANES = [0.3, 0.52, 0.74]; // fraction of canvas height
-const OUT_Y = 0.1; // targets the orbit cannot reach fly past up here
-const SAT_X = 0.2;
+// Vertical scroller: the ground track runs bottom → top (the map is turned so east is up, north is left).
+// Objects carry `x` = distance ahead of the bottom edge; the satellite sits at SAT_X of the height.
+const SAT_X = 0.28;
+const gapOf = (W: number) => Math.min(W * 0.22, 150);
+const laneX = (W: number, l: number) => (l < 0 ? Math.max(26, W / 2 - gapOf(W) * 2.3) : W / 2 + (l - 1) * gapOf(W));
 const STORM_WARN = 3, STORM_LEN = 4.5;
 
 export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s: FlightStats): void }) {
@@ -81,7 +83,7 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
     const frame = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       const W = cv.clientWidth, H = cv.clientHeight;
-      const speed = W * 0.42; // px per second
+      const speed = H * 0.42; // px per second
       if (!s.ended) s.t += dt;
       const shadow = inShadow(s.t);
       const safe = control.current.safe;
@@ -119,20 +121,20 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
 
         // spawning: storms bring dense particle clouds on the space-weather mission
         if (s.t >= s.nextTarget) {
-          s.objs.push({ kind: 'target', lane: p.reachesTargets ? Math.floor(Math.random() * 3) : -1, x: W + 40, done: false, spin: Math.random() * 6 });
+          s.objs.push({ kind: 'target', lane: p.reachesTargets ? Math.floor(Math.random() * 3) : -1, x: H + 40, done: false, spin: Math.random() * 6 });
           const gap = s.storm === 2 && kind === 'particle' ? 0.45 : (1.8 + Math.random() * 1.2) / p.targetRate;
           s.nextTarget = s.t + gap;
         }
         if (s.t >= s.nextDebris) {
-          s.objs.push({ kind: 'debris', lane: Math.floor(Math.random() * 3), x: W + 40, done: false, spin: Math.random() * 6 });
+          s.objs.push({ kind: 'debris', lane: Math.floor(Math.random() * 3), x: H + 40, done: false, spin: Math.random() * 6 });
           s.nextDebris = s.t + (1.6 + Math.random()) / p.debrisRate;
         }
         const orbit = Math.floor(s.t / p.orbitSec);
         for (let i = 0; i < p.stationsPerOrbit; i++) {
           const at = (0.15 + i * (0.8 / Math.max(1, p.stationsPerOrbit))) % 1;
           const key = `${orbit}-${i}`;
-          const lead = (W * (1 - SAT_X) + 40) / speed / p.orbitSec;
-          if (!s.stations.has(key) && phase(s.t) >= at - lead && phase(s.t) < at) { s.stations.add(key); s.objs.push({ kind: 'station', lane: 1, x: W + 60, done: false, spin: 0 }); }
+          const lead = (H * (1 - SAT_X) + 40) / speed / p.orbitSec;
+          if (!s.stations.has(key) && phase(s.t) >= at - lead && phase(s.t) < at) { s.stations.add(key); s.objs.push({ kind: 'station', lane: 1, x: H + 60, done: false, spin: 0 }); }
         }
 
         // movement
@@ -140,7 +142,7 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
         s.y += (target - s.y) * Math.min(1, dt * 10 * p.laneSpeed);
 
         // objects
-        const satX = W * SAT_X;
+        const satX = H * SAT_X;
         let contact = p.alwaysInContact;
         for (const o of s.objs) {
           o.x -= speed * dt;
@@ -155,9 +157,9 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
             else if (!p.sharp) { s.st.blurry++; say(t('😕 Too blurry from this height')); }
             else { s.memory++; s.st.captured++; s.battery -= 2; say('📸 +1', 0.6); }
           } else if (o.kind === 'debris' && !o.done && Math.abs(o.x - satX) < 26 && sameLane && s.t > s.invuln) {
-            o.done = true; s.hearts--; s.st.hits++; s.invuln = s.t + 1.2; if (s.memory > 0) s.memory--;
+            o.done = true; s.hearts--; s.st.hits++; s.invuln = s.t + 1.2; s.memory = Math.max(0, s.memory - 1);
             say(t('💥 Space junk hit! Lost a photo'));
-          } else if (o.kind === 'station' && Math.abs(o.x - satX) < W * 0.09) contact = true;
+          } else if (o.kind === 'station' && Math.abs(o.x - satX) < H * 0.09) contact = true;
         }
         s.objs = s.objs.filter((o) => o.x > -80);
         s.contact = contact && !asleep;
@@ -167,16 +169,20 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
       // ---- draw
       s.shadowMix += ((shadow ? 1 : 0) - s.shadowMix) * Math.min(1, dt * 3);
       ctx.fillStyle = '#04081c'; ctx.fillRect(0, 0, W, H);
+      const gap = gapOf(W);
       if (day.complete && day.naturalWidth) {
-        // the mission's latitude band of the map, scrolling west → east
-        const sy = day.naturalHeight * ((90 - north) / 180), sh = day.naturalHeight * ((north - south) / 180), sw = Math.min(day.naturalWidth * 0.6, sh * (W / H));
+        // the mission's latitude band of the map, turned so the west → east track scrolls downwards
+        // show at least 90° of latitude across the screen so the map is not blown up on wide screens
+        const span = Math.max(north - south, 90), mid = Math.max(-90 + span / 2, Math.min(90 - span / 2, (north + south) / 2));
+        const sy = day.naturalHeight * ((90 - (mid + span / 2)) / 180), sh = day.naturalHeight * (span / 180), sw = Math.min(day.naturalWidth * 0.6, sh * (H / W));
         s.scroll = (s.scroll + (s.ended ? 0 : dt * sw * (p.alwaysInContact ? 0.02 : 0.16))) % day.naturalWidth;
         const drawMap = (img: HTMLImageElement, alpha: number) => {
-          ctx.globalAlpha = alpha;
+          ctx.save(); ctx.globalAlpha = alpha;
+          ctx.translate(0, H); ctx.rotate(-Math.PI / 2); // x → up the screen (east), y → right (south)
           const x0 = s.scroll, first = Math.min(sw, img.naturalWidth - x0);
-          ctx.drawImage(img, x0, sy, first, sh, 0, 0, (first / sw) * W, H);
-          if (first < sw) ctx.drawImage(img, 0, sy, sw - first, sh, (first / sw) * W, 0, ((sw - first) / sw) * W, H);
-          ctx.globalAlpha = 1;
+          ctx.drawImage(img, x0, sy, first, sh, 0, 0, (first / sw) * H, W);
+          if (first < sw) ctx.drawImage(img, 0, sy, sw - first, sh, (first / sw) * H, 0, ((sw - first) / sw) * H, W);
+          ctx.restore();
         };
         drawMap(day, 1);
         ctx.fillStyle = `rgba(2,6,24,${0.72 * s.shadowMix})`; ctx.fillRect(0, 0, W, H);
@@ -185,54 +191,60 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
       // solar storm tint
       if (s.storm === 2) { ctx.fillStyle = `rgba(255,140,30,${0.16 + Math.sin(s.t * 9) * 0.06})`; ctx.fillRect(0, 0, W, H); }
       // lanes
-      ctx.strokeStyle = 'rgba(77,210,255,0.18)'; ctx.setLineDash([10, 14]); ctx.lineWidth = 2;
-      for (const l of LANES) { ctx.beginPath(); ctx.moveTo(0, l * H); ctx.lineTo(W, l * H); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(77,210,255,0.22)'; ctx.setLineDash([10, 14]); ctx.lineWidth = 2;
+      for (const l of [0, 1, 2]) { const x = laneX(W, l); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      // compass: north is to the left
+      ctx.setLineDash([]); ctx.font = '800 13px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      const north_ = t('◀ North');
+      ctx.fillStyle = 'rgba(4,8,28,0.6)'; ctx.fillRect(6, H * 0.5 - 12, ctx.measureText(north_).width + 10, 24);
+      ctx.fillStyle = '#cfe6ff'; ctx.fillText(north_, 11, H * 0.5);
       // the orbit's northern limit
       if (!p.reachesTargets) {
-        ctx.strokeStyle = 'rgba(255,90,90,0.8)'; ctx.setLineDash([6, 8]);
-        ctx.beginPath(); ctx.moveTo(0, 0.19 * H); ctx.lineTo(W, 0.19 * H); ctx.stroke();
-        const label = t('▲ your orbit never flies north of this line');
-        ctx.font = '700 13px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-        const lw = ctx.measureText(label).width;
-        ctx.fillStyle = 'rgba(40,6,12,0.75)'; ctx.fillRect(W - 20 - lw, 0.19 * H + 4, lw + 12, 20);
-        ctx.fillStyle = '#ff9a9a'; ctx.fillText(label, W - 14, 0.19 * H + 7);
+        const lx = W / 2 - gap * 1.6;
+        ctx.strokeStyle = 'rgba(255,90,90,0.85)'; ctx.setLineDash([6, 8]);
+        ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke(); ctx.setLineDash([]);
+        const label = t('◀ your orbit never flies north of this line');
+        ctx.font = '700 13px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        const lw = Math.min(ctx.measureText(label).width, W - lx - 16);
+        ctx.fillStyle = 'rgba(40,6,12,0.8)'; ctx.fillRect(lx + 4, H * 0.2, lw + 12, 22);
+        ctx.fillStyle = '#ff9a9a'; ctx.fillText(label, lx + 10, H * 0.2 + 4, lw);
       }
-      ctx.setLineDash([]);
 
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for (const o of s.objs) {
-        const y = o.lane < 0 ? OUT_Y * H : LANES[o.lane] * H;
+        const x = laneX(W, o.lane), y = H - o.x;
         if (o.kind === 'station') {
-          const g = ctx.createLinearGradient(o.x, H, o.x, 0);
-          g.addColorStop(0, 'rgba(61,220,132,0.45)'); g.addColorStop(1, 'rgba(61,220,132,0.03)');
-          ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(o.x - 10, H); ctx.lineTo(o.x - W * 0.09, 0); ctx.lineTo(o.x + W * 0.09, 0); ctx.lineTo(o.x + 10, H); ctx.fill();
-          // dish on a mast (drawn, so it looks the same on every computer)
-          ctx.fillStyle = '#cfd6e6'; ctx.fillRect(o.x - 3, H - 40, 6, 30);
-          ctx.beginPath(); ctx.ellipse(o.x, H - 46, 22, 10, -0.5, 0, Math.PI); ctx.fill();
-          ctx.strokeStyle = '#3ddc84'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(o.x + 6, H - 58, 8 + (s.t * 20) % 10, -1.2, 0.2); ctx.stroke();
+          // a station's radio cone reaches across the track from the dish at the edge
+          const bh = H * 0.09;
+          const g = ctx.createLinearGradient(W, y, 0, y);
+          g.addColorStop(0, 'rgba(61,220,132,0.45)'); g.addColorStop(1, 'rgba(61,220,132,0.04)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(W, y - 10); ctx.lineTo(0, y - bh); ctx.lineTo(0, y + bh); ctx.lineTo(W, y + 10); ctx.fill();
+          ctx.fillStyle = '#cfd6e6'; ctx.fillRect(W - 40, y - 3, 30, 6);
+          ctx.beginPath(); ctx.ellipse(W - 46, y, 10, 22, -0.5, Math.PI / 2, Math.PI * 1.5); ctx.fill();
+          ctx.strokeStyle = '#3ddc84'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(W - 58, y - 6, 8 + (s.t * 20) % 10, Math.PI * 0.8, Math.PI * 1.4); ctx.stroke();
         } else if (o.kind === 'target') {
           if (o.done) continue;
           ctx.globalAlpha = o.lane < 0 ? 0.55 : 1;
-          drawTarget(ctx, kind, o.x, y, s.t, o.spin);
+          drawTarget(ctx, kind, x, y, s.t, o.spin);
           ctx.globalAlpha = 1;
         } else {
           if (o.done) continue;
-          ctx.save(); ctx.translate(o.x, y); ctx.rotate(o.spin + s.t * 2);
+          ctx.save(); ctx.translate(x, y); ctx.rotate(o.spin + s.t * 2);
           ctx.fillStyle = '#9aa1ad'; ctx.strokeStyle = '#4b5160'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.moveTo(-16, -6); ctx.lineTo(-4, -16); ctx.lineTo(14, -10); ctx.lineTo(16, 8); ctx.lineTo(0, 16); ctx.lineTo(-14, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
           ctx.restore();
         }
       }
 
-      // satellite
-      const sx = W * SAT_X, sy = (LANES[0] + (LANES[2] - LANES[0]) * (s.y / 2)) * H;
+      // satellite (flies "up"; wings left and right, camera dot looks down at Earth)
+      const sx = W / 2 + (s.y - 1) * gap, sy = H * (1 - SAT_X);
       const blink = s.t < s.invuln && Math.floor(s.t * 12) % 2 === 0;
       if (!blink) {
-        ctx.save(); ctx.translate(sx, sy); ctx.rotate((control.current.lane - s.y) * 0.25);
+        ctx.save(); ctx.translate(sx, sy); ctx.rotate((control.current.lane - s.y) * 0.3);
         ctx.fillStyle = '#2b56c9'; ctx.fillRect(-46, -8, 30, 16); ctx.fillRect(16, -8, 30, 16);
         ctx.strokeStyle = '#8fb0ff'; ctx.lineWidth = 1; ctx.strokeRect(-46, -8, 30, 16); ctx.strokeRect(16, -8, 30, 16);
         ctx.fillStyle = asleep ? '#7a6630' : '#f1b93a'; ctx.fillRect(-15, -15, 30, 30);
-        ctx.fillStyle = '#ddd'; ctx.beginPath(); ctx.arc(0, 18, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ddd'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
         if (s.contact) { ctx.strokeStyle = 'rgba(61,220,132,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 30 + (s.t * 30) % 14, 0, Math.PI * 2); ctx.stroke(); }
         if (p.hearts > 3 && s.hearts > 3) { ctx.strokeStyle = 'rgba(77,210,255,0.5)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.stroke(); }
         if (safe) { ctx.strokeStyle = 'rgba(255,210,63,0.9)'; ctx.lineWidth = 3; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.arc(0, 0, 36, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
@@ -247,8 +259,8 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
 
     const move = (d: number) => { control.current.lane = Math.max(0, Math.min(2, control.current.lane + d)); };
     const onKey = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'w', 'W', 'ц', 'Ц'].includes(e.key)) { e.preventDefault(); move(-1); }
-      if (['ArrowDown', 's', 'S', 'ы', 'Ы'].includes(e.key)) { e.preventDefault(); move(1); }
+      if (['ArrowLeft', 'a', 'A', 'ф', 'Ф'].includes(e.key)) { e.preventDefault(); move(-1); }
+      if (['ArrowRight', 'd', 'D', 'в', 'В'].includes(e.key)) { e.preventDefault(); move(1); }
       if (e.key === ' ' && p.storms > 0) { e.preventDefault(); control.current.safe = !control.current.safe; }
     };
     window.addEventListener('keydown', onKey);
@@ -287,21 +299,21 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
       {hud.flash && <div className="r-flash">{hud.flash}</div>}
       {hud.t < 5 && <div className="r-tip">{t(TIPS[m.targets.kind])}{p.storms > 0 ? ' ' + t('SPACE = safe mode during solar storms.') : ''}</div>}
       <div className="g2d-touch">
-        <button onPointerDown={() => tap(-1)} aria-label="up">▲</button>
+        <button onPointerDown={() => tap(-1)} aria-label="left">◀</button>
         {p.storms > 0 && <button className={`safe ${hud.safe ? 'on' : ''}`} onPointerDown={() => { control.current.safe = !control.current.safe; }} aria-label="safe mode">🛡️</button>}
-        <button onPointerDown={() => tap(1)} aria-label="down">▼</button>
+        <button onPointerDown={() => tap(1)} aria-label="right">▶</button>
       </div>
     </div>
   );
 }
 
 const TIPS: Record<TargetKind, string> = {
-  star: '↑ ↓ to change lane. Fly over ✦ to take a photo, then over 📡 to send it home!',
-  fire: '↑ ↓ to change lane. Fly over 🔥 to photograph, then over 📡 to send photos home!',
-  ice: '↑ ↓ to change lane. Fly over glaciers to photograph them, then over 📡 to send photos home!',
-  storm: '↑ ↓ to change lane. Fly over 🌀 hurricanes to image them and send the images home!',
-  particle: '↑ ↓ to change lane. Fly through particle clouds to measure them, then over 📡 to send data home!',
-  city: '↑ ↓ to change lane. Fly over cities to photograph them, then over 📡 to send photos home!',
+  star: '← → to change lane. Fly over ✦ to take a photo, then over 📡 to send it home!',
+  fire: '← → to change lane. Fly over 🔥 to photograph, then over 📡 to send photos home!',
+  ice: '← → to change lane. Fly over glaciers to photograph them, then over 📡 to send photos home!',
+  storm: '← → to change lane. Fly over 🌀 hurricanes to image them and send the images home!',
+  particle: '← → to change lane. Fly through particle clouds to measure them, then over 📡 to send data home!',
+  city: '← → to change lane. Fly over cities to photograph them, then over 📡 to send photos home!',
 };
 
 /** Targets are drawn with shapes so they look the same on every computer (no emoji fonts needed). */

@@ -58,7 +58,7 @@ export const RU_MISSIONS: Record<string, string> = {
   '{n} targets passed in the dark. A normal camera needs sunlight - heat cameras and radiometers see at night.': '{n} целей прошли в темноте. Обычной камере нужен свет - тепловая камера и радиометр видят ночью.',
   'Only a telescope sees single buildings - and it must fly low.': 'Отдельные дома видит только телескоп - и лететь надо низко.',
   'From this height the photos are too blurry. Fly lower.': 'С такой высоты фото слишком размытые. Лети ниже.',
-  'Fly over more targets: change lanes with ↑ ↓.': 'Пролетай над большим числом целей: меняй полосу ↑ ↓.',
+  'Fly over more targets: change lanes with ← →.': 'Пролетай над большим числом целей: меняй полосу ← →.',
 
   // flight
   '🔧 Its parts wore out - the satellite stopped working': '🔧 Детали износились - спутник перестал работать',
@@ -67,14 +67,17 @@ export const RU_MISSIONS: Record<string, string> = {
   '💪 Radiation-hardened computer keeps working!': '💪 Защищённый компьютер работает дальше!',
   '⚡ Radiation crashed the computer! Memory lost': '⚡ Радиация сломала компьютер! Память стёрта',
   '🧭 Too far north - your orbit never flies there': '🧭 Слишком далеко на север - твоя орбита туда не летает',
-  '😴 Satellite asleep': '😴 Спутник спит', '▲ your orbit never flies north of this line': '▲ твоя орбита не залетает севернее этой линии',
+  '😴 Satellite asleep': '😴 Спутник спит', '◀ your orbit never flies north of this line': '◀ твоя орбита не залетает севернее этой линии', '◀ North': '◀ Север',
+  'Lift-off!': 'Старт!', 'Climbing to {km} km…': 'Набираем высоту {km} км…', 'First stage separation': 'Отделение первой ступени',
+  'Fairing opens': 'Открывается обтекатель', 'Satellite released - in orbit!': 'Спутник отделился - он на орбите!', 'Click to skip': 'Нажми, чтобы пропустить',
+  Rideshare: 'Попутный запуск', Heavy: 'Тяжёлая', km: 'км',
   '📡 Sending data home!': '📡 Отправляю данные домой!', '⚠️ Solar storm coming': '⚠️ Скоро солнечная буря', '☀️ Solar storm!': '☀️ Солнечная буря!',
   'Orbit {n} of {m}': 'Виток {n} из {m}', 'SPACE = safe mode during solar storms.': 'ПРОБЕЛ = безопасный режим во время солнечных бурь.',
-  '↑ ↓ to change lane. Fly over ✦ to take a photo, then over 📡 to send it home!': '↑ ↓ - смена полосы. Пролети над ✦, чтобы сфотографировать, потом над 📡, чтобы отправить домой!',
-  '↑ ↓ to change lane. Fly over glaciers to photograph them, then over 📡 to send photos home!': '↑ ↓ - смена полосы. Пролетай над ледниками, чтобы снять их, потом над 📡, чтобы отправить фото!',
-  '↑ ↓ to change lane. Fly over 🌀 hurricanes to image them and send the images home!': '↑ ↓ - смена полосы. Пролетай над ураганами 🌀 и отправляй снимки домой!',
-  '↑ ↓ to change lane. Fly through particle clouds to measure them, then over 📡 to send data home!': '↑ ↓ - смена полосы. Пролетай сквозь облака частиц, потом над 📡, чтобы отправить данные!',
-  '↑ ↓ to change lane. Fly over cities to photograph them, then over 📡 to send photos home!': '↑ ↓ - смена полосы. Пролетай над городами, потом над 📡, чтобы отправить фото!',
+  '← → to change lane. Fly over ✦ to take a photo, then over 📡 to send it home!': '← → - смена полосы. Пролети над ✦, чтобы сфотографировать, потом над 📡, чтобы отправить домой!',
+  '← → to change lane. Fly over glaciers to photograph them, then over 📡 to send photos home!': '← → - смена полосы. Пролетай над ледниками, чтобы снять их, потом над 📡, чтобы отправить фото!',
+  '← → to change lane. Fly over 🌀 hurricanes to image them and send the images home!': '← → - смена полосы. Пролетай над ураганами 🌀 и отправляй снимки домой!',
+  '← → to change lane. Fly through particle clouds to measure them, then over 📡 to send data home!': '← → - смена полосы. Пролетай сквозь облака частиц, потом над 📡, чтобы отправить данные!',
+  '← → to change lane. Fly over cities to photograph them, then over 📡 to send photos home!': '← → - смена полосы. Пролетай над городами, потом над 📡, чтобы отправить фото!',
 
   // new slots and instruments
   Body: 'Корпус', 'Smallest that fits': 'Самый маленький, куда всё влезет', 'Light and cheap. A CubeSat wears out in 3-4 years.': 'Лёгкий и дешёвый. CubeSat изнашивается за 3-4 года.',
