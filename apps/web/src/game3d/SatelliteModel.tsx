@@ -230,38 +230,8 @@ export function SatelliteModel({
   // Shield radius encloses the body and every part, antennas included (same boxes as model.check.ts)
   const shieldR = useMemo(() => computeSatelliteBoxes(build, mission).shieldRadius, [build, mission]);
 
-  // Highlight pulse for the currently selected slot in Hangar3D
-  const highlightRingRef = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (!highlightRingRef.current) return;
-    if (!focus) {
-      highlightRingRef.current.visible = false;
-      return;
-    }
-    const pulse = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * 6);
-    highlightRingRef.current.visible = true;
-    highlightRingRef.current.scale.setScalar(0.95 + pulse * 0.12);
-    const mat = highlightRingRef.current.material as THREE.MeshBasicMaterial;
-    mat.opacity = 0.35 + pulse * 0.45;
-  });
-
-  const focusPos = useMemo((): [number, number, number] | null => {
-    switch (focus) {
-      case 'camera': return [0, -h / 2 - 0.15, 0];
-      case 'antenna': return [0, h / 2 + 0.15, 0];
-      case 'panels': return [0, h * 0.08, 0];
-      case 'battery': return [-w * 0.21, -h / 2 + 0.18, d / 2 + 0.02];
-      case 'memory': return [w * 0.21, -h / 2 + 0.18, d / 2 + 0.02];
-      case 'computer': return [0, -h * 0.03, d / 2 + 0.02];
-      case 'thruster': return [0, -h * 0.22, -d / 2 - 0.08];
-      case 'body':
-      case 'shield': return [0, 0, 0];
-      default: return null;
-    }
-  }, [focus, w, h, d]);
-
   const isHi = (s: SlotId) => focus === s;
-  const foilEmissive = isHi('body') ? '#4dd2ff' : asleep ? '#110a00' : shadow ? '#1f1400' : '#3a2600';
+  const foilEmissive = isHi('body') ? '#ff7a2f' : asleep ? '#110a00' : shadow ? '#1f1400' : '#3a2600';
   const foilIntensity = isHi('body') ? 0.55 : asleep ? 0.08 : shadow ? 0.2 : 0.35;
 
   const dishR = Math.min(0.32, w * 0.46);
@@ -289,7 +259,7 @@ export function SatelliteModel({
         </mesh>
         {/* Top and bottom structural end-frames */}
         {[-1, 1].map((dir) => (
-          <mesh key={dir} position={[0, dir * (h / 2 - 0.022), 0]}>
+          <mesh key={dir} position={[0, dir * (h / 2 - 0.024), 0]}>
             <boxGeometry args={[w * 1.016, 0.044, d * 1.016]} />
             <meshStandardMaterial color="#2b3348" metalness={0.65} roughness={0.35} />
           </mesh>
@@ -408,7 +378,7 @@ export function SatelliteModel({
                 <cylinderGeometry args={[0.01, 0.016, 0.5 * Math.max(0.2, deploy), 10]} />
                 <meshStandardMaterial
                   color="#e2e6f0"
-                  emissive={isHi('antenna') ? '#4dd2ff' : '#000000'}
+                  emissive={isHi('antenna') ? '#ff7a2f' : '#000000'}
                   emissiveIntensity={isHi('antenna') ? 0.7 : 0}
                   metalness={0.7}
                   roughness={0.2}
@@ -432,7 +402,7 @@ export function SatelliteModel({
               <boxGeometry args={[w * 0.34, 0.016, d * 0.34]} />
               <meshStandardMaterial
                 color="#d4af37"
-                emissive={isHi('antenna') ? '#4dd2ff' : '#4a3500'}
+                emissive={isHi('antenna') ? '#ff7a2f' : '#4a3500'}
                 emissiveIntensity={isHi('antenna') ? 0.7 : 0.25}
                 metalness={0.7}
                 roughness={0.25}
@@ -453,7 +423,7 @@ export function SatelliteModel({
               <sphereGeometry args={[dishR, 20, 10, 0, Math.PI * 2, 0, dishTheta]} />
               <meshStandardMaterial
                 color="#f2f4f8"
-                emissive={isHi('antenna') ? '#4dd2ff' : '#1b2440'}
+                emissive={isHi('antenna') ? '#ff7a2f' : '#1b2440'}
                 emissiveIntensity={isHi('antenna') ? 0.55 : 0.15}
                 metalness={0.25}
                 roughness={0.35}
@@ -503,7 +473,7 @@ export function SatelliteModel({
           <meshStandardMaterial
             map={memTex}
             color="#ffffff"
-            emissive={isHi('memory') ? '#4dd2ff' : '#1b3b6f'}
+            emissive={isHi('memory') ? '#ff7a2f' : '#1b3b6f'}
             emissiveIntensity={isHi('memory') ? 0.65 : 0.25}
             roughness={0.35}
           />
@@ -541,7 +511,7 @@ export function SatelliteModel({
             <boxGeometry args={[Math.min(0.26, w * 0.46), 0.13, 0.02]} />
             <meshStandardMaterial
               color="#20304f"
-              emissive={isHi('computer') ? '#4dd2ff' : '#0d1830'}
+              emissive={isHi('computer') ? '#ff7a2f' : '#0d1830'}
               emissiveIntensity={isHi('computer') ? 0.65 : 0.2}
               metalness={0.4}
               roughness={0.45}
@@ -559,7 +529,7 @@ export function SatelliteModel({
               <cylinderGeometry args={[0.11, 0.12, 0.14, 16]} />
               <meshStandardMaterial
                 color="#dde2ec"
-                emissive={isHi('camera') ? '#4dd2ff' : '#000000'}
+                emissive={isHi('camera') ? '#ff7a2f' : '#000000'}
                 emissiveIntensity={isHi('camera') ? 0.5 : 0}
                 metalness={0.45}
                 roughness={0.3}
@@ -579,7 +549,7 @@ export function SatelliteModel({
               <boxGeometry args={[0.26, 0.12, 0.26]} />
               <meshStandardMaterial
                 color="#dce0e8"
-                emissive={isHi('camera') ? '#4dd2ff' : '#000000'}
+                emissive={isHi('camera') ? '#ff7a2f' : '#000000'}
                 emissiveIntensity={isHi('camera') ? 0.5 : 0}
                 metalness={0.45}
                 roughness={0.35}
@@ -609,7 +579,7 @@ export function SatelliteModel({
               <cylinderGeometry args={[0.165, 0.185, 0.38, 18]} />
               <meshStandardMaterial
                 color="#e8ecf2"
-                emissive={isHi('camera') ? '#4dd2ff' : '#000000'}
+                emissive={isHi('camera') ? '#ff7a2f' : '#000000'}
                 emissiveIntensity={isHi('camera') ? 0.5 : 0}
                 metalness={0.45}
                 roughness={0.3}
@@ -637,7 +607,7 @@ export function SatelliteModel({
               <boxGeometry args={[0.30, 0.18, 0.26]} />
               <meshStandardMaterial
                 color="#dde2ec"
-                emissive={isHi('camera') ? '#4dd2ff' : '#000000'}
+                emissive={isHi('camera') ? '#ff7a2f' : '#000000'}
                 emissiveIntensity={isHi('camera') ? 0.5 : 0}
                 metalness={0.45}
                 roughness={0.35}
@@ -664,7 +634,7 @@ export function SatelliteModel({
               <sphereGeometry args={[radioR, 20, 10, 0, Math.PI * 2, 0, dishTheta]} />
               <meshStandardMaterial
                 color="#e6eaf2"
-                emissive={isHi('camera') ? '#4dd2ff' : '#1b2440'}
+                emissive={isHi('camera') ? '#ff7a2f' : '#1b2440'}
                 emissiveIntensity={isHi('camera') ? 0.55 : 0.15}
                 metalness={0.3}
                 roughness={0.35}
@@ -693,7 +663,7 @@ export function SatelliteModel({
                 <cylinderGeometry args={[0.016, 0.016, 0.40, 10]} />
                 <meshStandardMaterial
                   color="#cfd6e6"
-                  emissive={isHi('camera') ? '#4dd2ff' : '#000000'}
+                  emissive={isHi('camera') ? '#ff7a2f' : '#000000'}
                   emissiveIntensity={isHi('camera') ? 0.6 : 0}
                   metalness={0.65}
                   roughness={0.25}
@@ -721,7 +691,7 @@ export function SatelliteModel({
               <cylinderGeometry args={[0.11, 0.11, 0.15, 16]} />
               <meshStandardMaterial
                 color="#ffd23f"
-                emissive={isHi('camera') ? '#4dd2ff' : '#a67c00'}
+                emissive={isHi('camera') ? '#ff7a2f' : '#a67c00'}
                 emissiveIntensity={isHi('camera') ? 0.65 : 0.3}
                 metalness={0.35}
                 roughness={0.35}
@@ -748,7 +718,7 @@ export function SatelliteModel({
             <coneGeometry args={[0.095, 0.15, 14, 1, true]} />
             <meshStandardMaterial
               color="#566075"
-              emissive={isHi('thruster') ? '#4dd2ff' : '#000000'}
+              emissive={isHi('thruster') ? '#ff7a2f' : '#000000'}
               emissiveIntensity={isHi('thruster') ? 0.65 : 0}
               metalness={0.75}
               roughness={0.25}
@@ -785,15 +755,6 @@ export function SatelliteModel({
         </mesh>
       )}
 
-      {/* Highlight halo ring around focused slot in Hangar3D */}
-      <mesh
-        ref={highlightRingRef}
-        visible={false}
-        position={focusPos ?? [0, 0, 0]}
-      >
-        <sphereGeometry args={[focus === 'body' || focus === 'shield' ? Math.max(w, h) * 0.72 : 0.28, 16, 12]} />
-        <meshBasicMaterial color="#4dd2ff" wireframe transparent opacity={0.5} depthWrite={false} />
-      </mesh>
     </group>
   );
 }

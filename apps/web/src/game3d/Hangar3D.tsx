@@ -3,7 +3,7 @@
 // Lit like a clean room: light background, soft floor grid.
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Grid, OrbitControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Build, SlotId } from '../game2d/config';
 import type { Mission } from '../game2d/missions';
@@ -78,8 +78,6 @@ function HangarStage({ build, mission, focus }: { build: Build; mission: Mission
   return (
     <>
       <ModelStats />
-      <color attach="background" args={['#f7f8f6']} />
-      <fog attach="fog" args={['#f7f8f6', 7, 14]} />
       <ambientLight intensity={0.9} />
       <hemisphereLight args={['#ffffff', '#c9ced3', 0.9]} />
       <directionalLight position={[4, 6, 4]} intensity={2.2} />
@@ -100,7 +98,6 @@ function HangarStage({ build, mission, focus }: { build: Build; mission: Mission
         <SatelliteModel build={build} mission={mission} focus={focus} />
       </group>
 
-      <Grid position={[0, -1.25, 0]} args={[14, 14]} cellColor="#d5dade" sectionColor="#aeb7bf" fadeDistance={12} infiniteGrid />
     </>
   );
 }
@@ -111,7 +108,7 @@ export interface HangarViewProps { build: Build; mission: Mission; focus: SlotId
 export function HangarView({ build, mission, focus }: HangarViewProps) {
   return (
     <div className="g3d-hangar-canvas">
-      <Canvas camera={{ position: [2.2, 1.3, 2.6], fov: 44 }} dpr={[1, 1.5]}>
+      <Canvas camera={{ position: [2.2, 1.3, 2.6], fov: 44 }} dpr={[1, 1.5]} gl={{ alpha: true }}>
         <HangarStage build={build} mission={mission} focus={focus} />
       </Canvas>
     </div>

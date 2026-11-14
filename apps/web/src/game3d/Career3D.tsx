@@ -52,9 +52,31 @@ const earthShader = {
     void main() {
       float l = dot(normalize(vNormalW), normalize(sunDir));
       float mixF = smoothstep(-0.25, 0.25, l);
-      vec3 day = texture2D(dayMap, vUv).rgb * (0.38 + 0.82 * max(l, 0.0));
-      vec3 night = texture2D(nightMap, vUv).rgb * 1.45 + texture2D(dayMap, vUv).rgb * 0.28;
+      vec3 day = texture2D(dayMap, vUv).rgb * (0.62 + 0.7 * max(l, 0.0));
+      vec3 night = texture2D(nightMap, vUv).rgb * 1.2 + texture2D(dayMap, vUv).rgb * 0.45;
       gl_FragColor = vec4(mix(night, day, mixF), 1.0);
+    }
+  `,
+};
+
+// atmosphere: a soft blue glow that fades out from the Earth's edge (no hard band)
+const glowShader = {
+  vertex: /* glsl */ `
+    varying vec3 vN;
+    varying vec3 vView;
+    void main() {
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      vN = normalize(normalMatrix * normal);
+      vView = normalize(-mv.xyz);
+      gl_Position = projectionMatrix * mv;
+    }
+  `,
+  fragment: /* glsl */ `
+    varying vec3 vN;
+    varying vec3 vView;
+    void main() {
+      float k = pow(clamp(0.72 + dot(vN, vView), 0.0, 1.0), 4.0);
+      gl_FragColor = vec4(vec3(0.35, 0.65, 1.0) * k, k);
     }
   `,
 };
@@ -104,7 +126,11 @@ function CareerGlobe({
     flyLeft.current = 0.65;
   }, [flyTargetId, baseDist, flyGoal]);
 
+  const sunFromView = useMemo(() => new THREE.Vector3(), []);
   useFrame((_, dt) => {
+    // keep the sun over the viewer's shoulder, so the side you look at is always in daylight
+    sunFromView.copy(camera.position).normalize().add(camera.up.clone().multiplyScalar(0.25)).normalize();
+    uniforms.sunDir.value.copy(sunFromView);
     if (flyLeft.current <= 0) return;
     flyLeft.current = Math.max(0, flyLeft.current - dt);
     camera.position.lerp(flyGoal, Math.min(1, dt * 6));
@@ -147,15 +173,15 @@ function CareerGlobe({
       </mesh>
 
       {/* Atmosphere Rim Glow */}
-      <mesh scale={1.03}>
+      <mesh scale={1.08}>
         <sphereGeometry args={[R_GLOBE, 48, 32]} />
-        <meshBasicMaterial color="#8fb8e0" transparent opacity={0.14} side={THREE.BackSide} />
+        <shaderMaterial vertexShader={glowShader.vertex} fragmentShader={glowShader.fragment} side={THREE.BackSide} transparent blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
 
       {/* Subtle decorative equatorial/polar orbit rings */}
       <mesh rotation={[Math.PI / 2.2, 0.3, 0]}>
         <ringGeometry args={[1.22, 1.226, 72]} />
-        <meshBasicMaterial color="#aeb7bf" transparent opacity={0.22} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#cfe3ff" transparent opacity={0.55} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
 
       {/* 6 Mission Markers on Globe */}
