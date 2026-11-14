@@ -3,6 +3,7 @@
 // Each mission adds rules: targets out of the orbit's reach, solar storms (safe mode), wear-out.
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
+import { sfx } from '../game3d/audio';
 import type { FlightParams } from './config';
 import type { Mission, TargetKind } from './missions';
 
@@ -102,12 +103,12 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
         // solar storms: warning → storm → over
         s.storm = 0;
         for (const st of storms) {
-          if (st.state === 0 && s.t >= st.at - STORM_WARN) { st.state = 1; say(t('☀️ Solar storm coming! Safe mode protects the computer'), 2.6); }
+          if (st.state === 0 && s.t >= st.at - STORM_WARN) { st.state = 1; sfx.storm(); say(t('☀️ Solar storm coming! Safe mode protects the computer'), 2.6); }
           if (st.state === 1 && s.t >= st.at) {
             st.state = 2;
             if (safe) { s.st.stormsSafe++; say(t('🛡️ Safe mode: asleep, but safe')); }
             else if (p.radHard) { s.st.stormsSurvived++; say(t('💪 Radiation-hardened computer keeps working!'), 2); }
-            else { s.st.stormHits++; s.hearts--; s.memory = 0; s.asleepUntil = s.t + 3; s.invuln = s.t + 1.5; say(t('⚡ Radiation crashed the computer! Memory lost'), 2.2); }
+            else { sfx.zap(); s.st.stormHits++; s.hearts--; s.memory = 0; s.asleepUntil = s.t + 3; s.invuln = s.t + 1.5; say(t('⚡ Radiation crashed the computer! Memory lost'), 2.2); }
           }
           if (st.state === 2 && s.t >= st.at + STORM_LEN) st.state = 3;
           if (st.state === 1) s.storm = Math.max(s.storm, 1) as 1;
@@ -116,7 +117,7 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
 
         // battery (safe mode uses little power)
         if (shadow) s.battery -= p.shadowDrain * dt * (safe ? 0.4 : 1); else s.battery += p.sunCharge * dt;
-        if (s.battery <= 0 && !asleep) { s.battery = 0; s.asleepUntil = s.t + 2.5; s.st.batteryOuts++; say(t('🪫 Battery empty - satellite asleep')); }
+        if (s.battery <= 0 && !asleep) { s.battery = 0; s.asleepUntil = s.t + 2.5; s.st.batteryOuts++; sfx.powerDown(); say(t('🪫 Battery empty - satellite asleep')); }
         s.battery = Math.max(0, Math.min(100, s.battery));
 
         // spawning: storms bring dense particle clouds on the space-weather mission
@@ -155,13 +156,14 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
             else if (asleep) say(t('😴 Satellite asleep'));
             else if (s.memory >= p.memory) { s.st.memoryFull++; say(t('💾 Memory full! Find a station')); }
             else if (!p.sharp) { s.st.blurry++; say(t('😕 Too blurry from this height')); }
-            else { s.memory++; s.st.captured++; s.battery -= 2; say('📸 +1', 0.6); }
+            else { s.memory++; s.st.captured++; s.battery -= 2; sfx.photo(); say('📸 +1', 0.6); }
           } else if (o.kind === 'debris' && !o.done && Math.abs(o.x - satX) < 26 && sameLane && s.t > s.invuln) {
             o.done = true; s.hearts--; s.st.hits++; s.invuln = s.t + 1.2; s.memory = Math.max(0, s.memory - 1);
-            say(t('💥 Space junk hit! Lost a photo'));
+            sfx.hit(); say(t('💥 Space junk hit! Lost a photo'));
           } else if (o.kind === 'station' && Math.abs(o.x - satX) < H * 0.09) contact = true;
         }
         s.objs = s.objs.filter((o) => o.x > -80);
+        if (contact && !asleep && !s.contact && !p.alwaysInContact) sfx.station();
         s.contact = contact && !asleep;
         if (s.contact && s.memory > 0) { const sent = Math.min(s.memory, p.photosPerSec * dt); s.memory -= sent; s.delivered += sent; s.battery -= 3 * dt; }
       }
