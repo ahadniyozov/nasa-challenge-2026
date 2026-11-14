@@ -16,7 +16,7 @@
 npm install
 npm run dev               # http://localhost:5173 (главный режим — 2D-игра)
 npm run typecheck         # engine + web + server
-npm test                  # vitest, движок
+npm test                  # vitest: движок + apps/web (sim.test.ts)
 npm run check:missions    # баланс: у каждой миссии есть решение, стартовый спутник её не решает
 npm run build
 node scripts/bot-2d.mjs [http://localhost:5199/?all] [missionId]   # бот играет миссии в браузере (нужен запущенный dev-сервер и playwright)
@@ -38,7 +38,11 @@ apps/web/src/
     missions.ts            MISSIONS (6 штук), INSTRUMENT_INFO, у каждой миссии: заказчик, требования, допустимые слоты, start/test-спутник
     config.ts              SLOTS, Build, slotsFor(m), toDesign(build, m), analyse(build, m) → Analysis { budgets, blockers, flight: FlightParams, gauges }
     Game2D.tsx             экраны: career → brief → launch → flight → report → build; прогресс-звёзды в localStorage 'g2d-progress-v1'
-    Flight2D.tsx           полёт: вертикальный скроллер, 3 вертикальные полосы, карта повёрнута (север слева)
+    sim.ts                 ПРАВИЛА ПОЛЁТА без DOM: createSim / stepSim (фикс. шаг 1/120 с, сид), расстояния `ahead` в секундах, events; botInput / runSim
+    sim.test.ts            тесты полёта (vitest)
+    FlightHud.tsx          общий для 2D и 3D: HTML-HUD, управление (useFlightControls), тексты событий (FlightMessages)
+    Flight2D.tsx           только рисует SimState: вертикальный скроллер, 3 полосы, карта повёрнута (север слева)
+    solutions.ts           решения-образцы миссий (для check:missions и тестов)
     Launch2D.tsx           анимация запуска на canvas (ракета зависит от build.rocket)
     SatelliteArt.tsx       SVG спутника на экране сборки
     missions.check.ts      статическая проверка баланса
@@ -92,7 +96,7 @@ deploy/                    Docker + Caddy
 - Тексты интерфейса — только `t('English text')`; русский перевод в `src/i18n/ru-2d.ts` / `ru-missions.ts`. Шаблоны: `t('Year {n} of {m}', { n, m })`.
 - На canvas не рисовать эмодзи: в части браузеров их нет, поэтому цели и станции рисуются фигурами (`drawTarget` в `Flight2D.tsx`).
 - `localStorage` — только в try/catch (в приватном режиме бросает исключение).
-- Хуки для бота: `window.__g2d` (состояние полёта), `window.__g2dMove(±1)`, `window.__g2dSafe(on)`, `window.__g2dPlay(missionId, buildPatch, isTest)`. Для 3D добавить такие же `__g3d*`.
+- Хуки для бота: `window.__g2d` (SimState), `window.__simBot(state, useSafe)` (тот же бот, что в тестах), `window.__g2dMove(±1)`, `window.__g2dSafe(on)`, `window.__g2dPlay(missionId, buildPatch, isTest)`. Для 3D добавить такие же `__g3d*`.
 - Ассеты: свои модели из примитивов или CC0 с указанием источника. Без логотипов NASA и фото людей. Текстуры Земли — NASA Blue/Black Marble в `public/textures/`.
 - Телефон обязателен: портрет, касания, без горизонтальной прокрутки, ≥ 30 fps.
 

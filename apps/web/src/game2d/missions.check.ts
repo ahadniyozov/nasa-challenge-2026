@@ -3,15 +3,7 @@
 import assert from 'node:assert/strict';
 import { analyse, type Build } from './config';
 import { MISSIONS } from './missions';
-
-const SOLUTIONS: Record<string, Partial<Build>> = {
-  first: { antenna: 's-band' },
-  wildfire: { camera: 'cam-thermal', orbit: 'sso-550', panels: 'solar-deploy-s', battery: 'batt-m', memory: 'm12', stations: 'st2', antenna: 'x-band' },
-  ice: { orbit: 'sso-550', stations: 'st2', camera: 'radiometer', panels: 'solar-deploy-l', battery: 'batt-l' },
-  weather: { orbit: 'geo', rocket: 'heavy', body: 'smallsat', camera: 'cam-thermal', antenna: 'x-band', panels: 'solar-deploy-l', battery: 'batt-l' },
-  spaceweather: { computer: 'obc-rad', panels: 'solar-deploy-s', battery: 'batt-m', stations: 'st2' },
-  mapping: { camera: 'cam-hires', antenna: 'x-band', body: 'smallsat', panels: 'solar-deploy-l', battery: 'batt-l', memory: 'm12', stations: 'st2' },
-};
+import { SOLUTIONS } from './solutions';
 
 const meets = (m: (typeof MISSIONS)[number], b: Build) => {
   const a = analyse(b, m), f = a.flight;
