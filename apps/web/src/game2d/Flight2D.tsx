@@ -1,44 +1,29 @@
 // 2D vertical scroller: the satellite flies up over a scrolling map of the mission's part of Earth.
-// 3 vertical lanes (← →). Targets are recorded when you pass over them; data counts only after a ground station.
-// Each mission adds rules: targets out of the orbit's reach, solar storms (safe mode), wear-out.
+// The rules live in sim.ts (shared with the 3D flight); this file only draws SimState on a canvas.
+// Distances in the sim are seconds of flight; here one second = SPEED × screen height.
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { FlightParams } from './config';
+import { FlightHud, FlightMessages, hudOf, initialHud, useFlightControls } from './FlightHud';
 import type { Mission, TargetKind } from './missions';
+import { createSim, stepSim, type FlightStats } from './sim';
 
-export interface FlightStats {
-  delivered: number;
-  captured: number;
-  lostInMemory: number;
-  survived: boolean;
-  decayed: boolean;
-  wornOut: boolean;
-  hits: number;
-  batteryOuts: number;
-  memoryFull: number;
-  nightMissed: number;
-  blurry: number;
-  outOfReach: number;
-  stormHits: number;
-  stormsSafe: number;
-  stormsSurvived: number;
-}
+export type { FlightStats } from './sim';
 
-type Kind = 'target' | 'debris' | 'station';
-interface Obj { kind: Kind; lane: number; x: number; done: boolean; spin: number }
-
-// Vertical scroller: the ground track runs bottom → top (the map is turned so east is up, north is left).
-// Objects carry `x` = distance ahead of the bottom edge; the satellite sits at SAT_X of the height.
+// The ground track runs bottom → top (the map is turned so east is up, north is left).
+// The satellite sits at SAT_X of the height; objects `ahead` seconds away are SPEED × H × ahead pixels higher.
 const SAT_X = 0.28;
+const SPEED = 0.42; // screen heights per second
 const gapOf = (W: number) => Math.min(W * 0.22, 150);
 const laneX = (W: number, l: number) => (l < 0 ? Math.max(26, W / 2 - gapOf(W) * 2.3) : W / 2 + (l - 1) * gapOf(W));
-const STORM_WARN = 3, STORM_LEN = 4.5;
+/** each object gets its own fixed spin from its id (looks random, same every time) */
+const spinOf = (id: number) => (id * 2.399) % (Math.PI * 2);
 
-export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s: FlightStats): void }) {
+export function Flight2D({ p, m, onEnd, seed }: { p: FlightParams; m: Mission; onEnd(s: FlightStats): void; seed?: number }) {
   const { t } = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [hud, setHud] = useState({ t: 0, battery: 100, memory: 0, delivered: 0, hearts: p.hearts, shadow: false, contact: false, asleep: false, flash: '' as string, safe: false, storm: 0 as 0 | 1 | 2 });
-  const control = useRef({ lane: 1, safe: false });
+  const [hud, setHud] = useState(() => initialHud(p));
+  const control = useFlightControls(p, 'g2d');
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
 
@@ -49,20 +34,11 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
     const night = new Image(); night.src = '/textures/earth-night.webp';
     const kind = m.targets.kind;
     const [north, south] = m.targets.band;
-
-    const duration = p.orbitSec * p.orbits;
-    const endAt = p.orbitSec * p.orbitsBeforeDecay;
-    // storms spread over the mission, never in the first seconds
-    const storms = Array.from({ length: p.storms }, (_, i) => ({ at: duration * ((i + 0.55) / p.storms), state: 0 as 0 | 1 | 2 | 3 }));
-    const s = {
-      t: 0, y: 1, battery: 100, asleepUntil: 0, memory: 0, delivered: 0, hearts: p.hearts, invuln: 0,
-      objs: [] as Obj[], nextTarget: 1, nextDebris: 2.5, stations: new Set<string>(), scroll: 0, shadowMix: 0,
-      flash: '', flashUntil: 0, ended: false, contact: false, storm: 0 as 0 | 1 | 2,
-      st: { delivered: 0, captured: 0, lostInMemory: 0, survived: true, decayed: false, wornOut: false, hits: 0, batteryOuts: 0, memoryFull: 0, nightMissed: 0, blurry: 0, outOfReach: 0, stormHits: 0, stormsSafe: 0, stormsSurvived: 0 } as FlightStats,
-    };
-    const say = (msg: string, sec = 1.3) => { s.flash = msg; s.flashUntil = s.t + sec; };
-    const phase = (tt: number) => (tt / p.orbitSec) % 1;
-    const inShadow = (tt: number) => { const ph = phase(tt); return ph > 0.5 - p.shadowFraction / 2 && ph < 0.5 + p.shadowFraction / 2; };
+    const s = createSim(p, m, seed);
+    const msgs = new FlightMessages(t);
+    const w = window as unknown as Record<string, unknown>;
+    w.__g2d = s;
+    let scroll = 0, shadowMix = 0, endTimer = 0;
 
     let raf = 0, last = performance.now(), hudTick = 0;
     const resize = () => {
@@ -72,102 +48,16 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
     resize();
     window.addEventListener('resize', resize);
 
-    const finish = () => {
-      if (s.ended) return;
-      s.ended = true;
-      s.st.delivered = Math.floor(s.delivered);
-      s.st.lostInMemory = Math.round(s.memory);
-      setTimeout(() => endRef.current({ ...s.st }), 900);
-    };
-
     const frame = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       const W = cv.clientWidth, H = cv.clientHeight;
-      const speed = H * 0.42; // px per second
-      if (!s.ended) s.t += dt;
-      const shadow = inShadow(s.t);
-      const safe = control.current.safe;
-      const asleep = s.t < s.asleepUntil || safe;
-
-      if (!s.ended) {
-        // mission end: planned end, decay / wear-out, or destroyed
-        if (s.t >= endAt && endAt < duration) {
-          s.st.survived = false;
-          if (p.endReason === 'decay') { s.st.decayed = true; say(t('🔥 The air pulled the satellite down - it burned up'), 3); }
-          else { s.st.wornOut = true; say(t('🔧 Its parts wore out - the satellite stopped working'), 3); }
-          finish();
-        } else if (s.t >= duration) finish();
-        else if (s.hearts <= 0) { s.st.survived = false; finish(); }
-
-        // solar storms: warning → storm → over
-        s.storm = 0;
-        for (const st of storms) {
-          if (st.state === 0 && s.t >= st.at - STORM_WARN) { st.state = 1; say(t('☀️ Solar storm coming! Safe mode protects the computer'), 2.6); }
-          if (st.state === 1 && s.t >= st.at) {
-            st.state = 2;
-            if (safe) { s.st.stormsSafe++; say(t('🛡️ Safe mode: asleep, but safe')); }
-            else if (p.radHard) { s.st.stormsSurvived++; say(t('💪 Radiation-hardened computer keeps working!'), 2); }
-            else { s.st.stormHits++; s.hearts--; s.memory = 0; s.asleepUntil = s.t + 3; s.invuln = s.t + 1.5; say(t('⚡ Radiation crashed the computer! Memory lost'), 2.2); }
-          }
-          if (st.state === 2 && s.t >= st.at + STORM_LEN) st.state = 3;
-          if (st.state === 1) s.storm = Math.max(s.storm, 1) as 1;
-          if (st.state === 2) s.storm = 2;
-        }
-
-        // battery (safe mode uses little power)
-        if (shadow) s.battery -= p.shadowDrain * dt * (safe ? 0.4 : 1); else s.battery += p.sunCharge * dt;
-        if (s.battery <= 0 && !asleep) { s.battery = 0; s.asleepUntil = s.t + 2.5; s.st.batteryOuts++; say(t('🪫 Battery empty - satellite asleep')); }
-        s.battery = Math.max(0, Math.min(100, s.battery));
-
-        // spawning: storms bring dense particle clouds on the space-weather mission
-        if (s.t >= s.nextTarget) {
-          s.objs.push({ kind: 'target', lane: p.reachesTargets ? Math.floor(Math.random() * 3) : -1, x: H + 40, done: false, spin: Math.random() * 6 });
-          const gap = s.storm === 2 && kind === 'particle' ? 0.45 : (1.8 + Math.random() * 1.2) / p.targetRate;
-          s.nextTarget = s.t + gap;
-        }
-        if (s.t >= s.nextDebris) {
-          s.objs.push({ kind: 'debris', lane: Math.floor(Math.random() * 3), x: H + 40, done: false, spin: Math.random() * 6 });
-          s.nextDebris = s.t + (1.6 + Math.random()) / p.debrisRate;
-        }
-        const orbit = Math.floor(s.t / p.orbitSec);
-        for (let i = 0; i < p.stationsPerOrbit; i++) {
-          const at = (0.15 + i * (0.8 / Math.max(1, p.stationsPerOrbit))) % 1;
-          const key = `${orbit}-${i}`;
-          const lead = (H * (1 - SAT_X) + 40) / speed / p.orbitSec;
-          if (!s.stations.has(key) && phase(s.t) >= at - lead && phase(s.t) < at) { s.stations.add(key); s.objs.push({ kind: 'station', lane: 1, x: H + 60, done: false, spin: 0 }); }
-        }
-
-        // movement
-        const target = control.current.lane;
-        s.y += (target - s.y) * Math.min(1, dt * 10 * p.laneSpeed);
-
-        // objects
-        const satX = H * SAT_X;
-        let contact = p.alwaysInContact;
-        for (const o of s.objs) {
-          o.x -= speed * dt;
-          const sameLane = Math.abs(o.lane - s.y) < 0.45;
-          if (o.kind === 'target' && !o.done && o.x <= satX) {
-            o.done = true;
-            if (o.lane < 0) { s.st.outOfReach++; if (s.st.outOfReach <= 2 || s.st.outOfReach % 4 === 0) say(t('🧭 Too far north - your orbit never flies there'), 1.6); continue; }
-            if (!sameLane) continue;
-            if (shadow && !p.nightVision) { s.st.nightMissed++; say(t('🌑 Too dark for this camera')); }
-            else if (asleep) say(t('😴 Satellite asleep'));
-            else if (s.memory >= p.memory) { s.st.memoryFull++; say(t('💾 Memory full! Find a station')); }
-            else if (!p.sharp) { s.st.blurry++; say(t('😕 Too blurry from this height')); }
-            else { s.memory++; s.st.captured++; s.battery -= 2; say('📸 +1', 0.6); }
-          } else if (o.kind === 'debris' && !o.done && Math.abs(o.x - satX) < 26 && sameLane && s.t > s.invuln) {
-            o.done = true; s.hearts--; s.st.hits++; s.invuln = s.t + 1.2; s.memory = Math.max(0, s.memory - 1);
-            say(t('💥 Space junk hit! Lost a photo'));
-          } else if (o.kind === 'station' && Math.abs(o.x - satX) < H * 0.09) contact = true;
-        }
-        s.objs = s.objs.filter((o) => o.x > -80);
-        s.contact = contact && !asleep;
-        if (s.contact && s.memory > 0) { const sent = Math.min(s.memory, p.photosPerSec * dt); s.memory -= sent; s.delivered += sent; s.battery -= 3 * dt; }
-      }
+      stepSim(s, dt, control.current);
+      msgs.take(s);
+      if (s.events.some((e) => e.type === 'end')) endTimer = window.setTimeout(() => endRef.current({ ...s.stats }), 900);
+      const shadow = s.shadow, safe = s.safe;
 
       // ---- draw
-      s.shadowMix += ((shadow ? 1 : 0) - s.shadowMix) * Math.min(1, dt * 3);
+      shadowMix += ((shadow ? 1 : 0) - shadowMix) * Math.min(1, dt * 3);
       ctx.fillStyle = '#04081c'; ctx.fillRect(0, 0, W, H);
       const gap = gapOf(W);
       if (day.complete && day.naturalWidth) {
@@ -175,18 +65,18 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
         // show at least 90° of latitude across the screen so the map is not blown up on wide screens
         const span = Math.max(north - south, 90), mid = Math.max(-90 + span / 2, Math.min(90 - span / 2, (north + south) / 2));
         const sy = day.naturalHeight * ((90 - (mid + span / 2)) / 180), sh = day.naturalHeight * (span / 180), sw = Math.min(day.naturalWidth * 0.6, sh * (H / W));
-        s.scroll = (s.scroll + (s.ended ? 0 : dt * sw * (p.alwaysInContact ? 0.02 : 0.16))) % day.naturalWidth;
+        scroll = (scroll + (s.ended ? 0 : dt * sw * (p.alwaysInContact ? 0.02 : 0.16))) % day.naturalWidth;
         const drawMap = (img: HTMLImageElement, alpha: number) => {
           ctx.save(); ctx.globalAlpha = alpha;
           ctx.translate(0, H); ctx.rotate(-Math.PI / 2); // x → up the screen (east), y → right (south)
-          const x0 = s.scroll, first = Math.min(sw, img.naturalWidth - x0);
+          const x0 = scroll, first = Math.min(sw, img.naturalWidth - x0);
           ctx.drawImage(img, x0, sy, first, sh, 0, 0, (first / sw) * H, W);
           if (first < sw) ctx.drawImage(img, 0, sy, sw - first, sh, (first / sw) * H, 0, ((sw - first) / sw) * H, W);
           ctx.restore();
         };
         drawMap(day, 1);
-        ctx.fillStyle = `rgba(2,6,24,${0.72 * s.shadowMix})`; ctx.fillRect(0, 0, W, H);
-        if (night.complete && s.shadowMix > 0.05) drawMap(night, 0.9 * s.shadowMix);
+        ctx.fillStyle = `rgba(2,6,24,${0.72 * shadowMix})`; ctx.fillRect(0, 0, W, H);
+        if (night.complete && shadowMix > 0.05) drawMap(night, 0.9 * shadowMix);
       }
       // solar storm tint
       if (s.storm === 2) { ctx.fillStyle = `rgba(255,140,30,${0.16 + Math.sin(s.t * 9) * 0.06})`; ctx.fillRect(0, 0, W, H); }
@@ -211,8 +101,10 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
       }
 
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      for (const o of s.objs) {
-        const x = laneX(W, o.lane), y = H - o.x;
+      const satY = H * (1 - SAT_X), px = H * SPEED;
+      for (const o of s.objects) {
+        const x = laneX(W, o.lane), y = satY - o.ahead * px;
+        if (y < -80 || y > H + 80) continue;
         if (o.kind === 'station') {
           // a station's radio cone reaches across the track from the dish at the edge
           const bh = H * 0.09;
@@ -225,11 +117,11 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
         } else if (o.kind === 'target') {
           if (o.done) continue;
           ctx.globalAlpha = o.lane < 0 ? 0.55 : 1;
-          drawTarget(ctx, kind, x, y, s.t, o.spin);
+          drawTarget(ctx, kind, x, y, s.t, spinOf(o.id));
           ctx.globalAlpha = 1;
         } else {
           if (o.done) continue;
-          ctx.save(); ctx.translate(x, y); ctx.rotate(o.spin + s.t * 2);
+          ctx.save(); ctx.translate(x, y); ctx.rotate(spinOf(o.id) + s.t * 2);
           ctx.fillStyle = '#9aa1ad'; ctx.strokeStyle = '#4b5160'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.moveTo(-16, -6); ctx.lineTo(-4, -16); ctx.lineTo(14, -10); ctx.lineTo(16, 8); ctx.lineTo(0, 16); ctx.lineTo(-14, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
           ctx.restore();
@@ -237,13 +129,13 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
       }
 
       // satellite (flies "up"; wings left and right, camera dot looks down at Earth)
-      const sx = W / 2 + (s.y - 1) * gap, sy = H * (1 - SAT_X);
-      const blink = s.t < s.invuln && Math.floor(s.t * 12) % 2 === 0;
+      const sx = W / 2 + (s.laneY - 1) * gap;
+      const blink = s.invulnerable && Math.floor(s.t * 12) % 2 === 0;
       if (!blink) {
-        ctx.save(); ctx.translate(sx, sy); ctx.rotate((control.current.lane - s.y) * 0.3);
+        ctx.save(); ctx.translate(sx, satY); ctx.rotate((s.lane - s.laneY) * 0.3);
         ctx.fillStyle = '#2b56c9'; ctx.fillRect(-46, -8, 30, 16); ctx.fillRect(16, -8, 30, 16);
         ctx.strokeStyle = '#8fb0ff'; ctx.lineWidth = 1; ctx.strokeRect(-46, -8, 30, 16); ctx.strokeRect(16, -8, 30, 16);
-        ctx.fillStyle = asleep ? '#7a6630' : '#f1b93a'; ctx.fillRect(-15, -15, 30, 30);
+        ctx.fillStyle = s.asleep ? '#7a6630' : '#f1b93a'; ctx.fillRect(-15, -15, 30, 30);
         ctx.fillStyle = '#ddd'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
         if (s.contact) { ctx.strokeStyle = 'rgba(61,220,132,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 30 + (s.t * 30) % 14, 0, Math.PI * 2); ctx.stroke(); }
         if (p.hearts > 3 && s.hearts > 3) { ctx.strokeStyle = 'rgba(77,210,255,0.5)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.stroke(); }
@@ -251,70 +143,20 @@ export function Flight2D({ p, m, onEnd }: { p: FlightParams; m: Mission; onEnd(s
         ctx.restore();
       }
 
-      if (++hudTick % 6 === 0) setHud({ t: s.t, battery: s.battery, memory: s.memory, delivered: s.delivered, hearts: s.hearts, shadow, contact: s.contact, asleep, flash: s.t < s.flashUntil ? s.flash : '', safe, storm: s.storm });
-      (window as unknown as Record<string, unknown>).__g2d = s;
+      if (++hudTick % 6 === 0) setHud(hudOf(s, msgs.current(s)));
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-
-    const move = (d: number) => { control.current.lane = Math.max(0, Math.min(2, control.current.lane + d)); };
-    const onKey = (e: KeyboardEvent) => {
-      if (['ArrowLeft', 'a', 'A', 'ф', 'Ф'].includes(e.key)) { e.preventDefault(); move(-1); }
-      if (['ArrowRight', 'd', 'D', 'в', 'В'].includes(e.key)) { e.preventDefault(); move(1); }
-      if (e.key === ' ' && p.storms > 0) { e.preventDefault(); control.current.safe = !control.current.safe; }
-    };
-    window.addEventListener('keydown', onKey);
-    (window as unknown as Record<string, unknown>).__g2dMove = move;
-    (window as unknown as Record<string, unknown>).__g2dSafe = (on: boolean) => { control.current.safe = on; };
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); window.removeEventListener('keydown', onKey); };
-  }, [p, m, t]);
-
-  const tap = (d: number) => { control.current.lane = Math.max(0, Math.min(2, control.current.lane + d)); };
-  const duration = p.orbitSec * p.orbits;
-  const ph = (hud.t / p.orbitSec) % 1;
-  const lap = Math.min(p.orbits, Math.floor(hud.t / p.orbitSec) + 1);
+    return () => { cancelAnimationFrame(raf); clearTimeout(endTimer); window.removeEventListener('resize', resize); };
+  }, [p, m, t, seed, control]);
 
   return (
     <div className="runner-stage g2d-flight">
       <canvas ref={canvas} className="g2d-canvas" />
-      <div className="r-hud top">
-        <div className="r-goal"><b>📡 {Math.floor(hud.delivered)} / {p.goal}</b><small>{t(m.targets.label)} {t('delivered')}</small></div>
-        <div className="r-mem">💾 {Array.from({ length: p.memory }, (_, i) => <span key={i} className={i < Math.round(hud.memory) ? 'full' : ''} />)}</div>
-        <div className="r-hp">{Array.from({ length: p.hearts }, (_, i) => <span key={i}>{i < hud.hearts ? '❤️' : '🖤'}</span>)}</div>
-        <div className="r-orbit">
-          <small>{m.laps ? t('Orbit {n} of {m}', { n: lap, m: p.orbits }) : t('Year {n} of {m}', { n: lap, m: p.orbits })}</small>
-          <div className="r-strip">
-            <div className="shadow" style={{ left: `${(0.5 - p.shadowFraction / 2) * 100}%`, width: `${p.shadowFraction * 100}%` }} />
-            <div className="you" style={{ left: `${ph * 100}%` }} />
-          </div>
-          <div className="mini-track"><div style={{ width: `${Math.min(100, (hud.t / duration) * 100)}%` }} /></div>
-        </div>
-      </div>
-      <div className="r-hud bottom">
-        <div className={`r-chip ${hud.shadow ? 'night' : 'day'}`}>{hud.shadow ? t('🌑 Earth\'s shadow') : t('☀️ Sunlight - charging')}</div>
-        <div className="r-battery">🔋<div className="r-bar"><div className={hud.battery < 25 ? 'low' : ''} style={{ width: `${hud.battery}%` }} /></div></div>
-        {hud.contact && <div className="r-chip contact">{t('📡 Sending data home!')}</div>}
-        {hud.storm > 0 && <div className="r-chip storm">{hud.storm === 1 ? t('⚠️ Solar storm coming') : t('☀️ Solar storm!')}</div>}
-      </div>
-      {hud.flash && <div className="r-flash">{hud.flash}</div>}
-      {hud.t < 5 && <div className="r-tip">{t(TIPS[m.targets.kind])}{p.storms > 0 ? ' ' + t('SPACE = safe mode during solar storms.') : ''}</div>}
-      <div className="g2d-touch">
-        <button onPointerDown={() => tap(-1)} aria-label="left">◀</button>
-        {p.storms > 0 && <button className={`safe ${hud.safe ? 'on' : ''}`} onPointerDown={() => { control.current.safe = !control.current.safe; }} aria-label="safe mode">🛡️</button>}
-        <button onPointerDown={() => tap(1)} aria-label="right">▶</button>
-      </div>
+      <FlightHud p={p} m={m} hud={hud} control={control} />
     </div>
   );
 }
-
-const TIPS: Record<TargetKind, string> = {
-  star: '← → to change lane. Fly over ✦ to take a photo, then over 📡 to send it home!',
-  fire: '← → to change lane. Fly over 🔥 to photograph, then over 📡 to send photos home!',
-  ice: '← → to change lane. Fly over glaciers to photograph them, then over 📡 to send photos home!',
-  storm: '← → to change lane. Fly over 🌀 hurricanes to image them and send the images home!',
-  particle: '← → to change lane. Fly through particle clouds to measure them, then over 📡 to send data home!',
-  city: '← → to change lane. Fly over cities to photograph them, then over 📡 to send photos home!',
-};
 
 /** Targets are drawn with shapes so they look the same on every computer (no emoji fonts needed). */
 function drawTarget(ctx: CanvasRenderingContext2D, kind: TargetKind, x: number, y: number, time: number, spin: number) {
