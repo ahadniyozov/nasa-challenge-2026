@@ -1,4 +1,4 @@
-// TEMPORARY Russian for the 6 missions of the 2D game. Delete together with ru.ts.
+// TEMPORARY Russian for the 6 missions of the 2D game. Delete before the final build.
 export const RU_MISSIONS: Record<string, string> = {
   // career
   'Mission Control': 'Центр управления', '🗺️ All missions': '🗺️ Все миссии', 'Choose a mission': 'Выбери миссию',
@@ -73,11 +73,15 @@ export const RU_MISSIONS: Record<string, string> = {
   Rideshare: 'Попутный запуск', Heavy: 'Тяжёлая', km: 'км',
   '📡 Sending data home!': '📡 Отправляю данные домой!', '⚠️ Solar storm coming': '⚠️ Скоро солнечная буря', '☀️ Solar storm!': '☀️ Солнечная буря!',
   'Orbit {n} of {m}': 'Виток {n} из {m}', 'SPACE = safe mode during solar storms.': 'ПРОБЕЛ = безопасный режим во время солнечных бурь.',
-  '← → to change lane. Fly over ✦ to take a photo, then over 📡 to send it home!': '← → - смена полосы. Пролети над ✦, чтобы сфотографировать, потом над 📡, чтобы отправить домой!',
-  '← → to change lane. Fly over glaciers to photograph them, then over 📡 to send photos home!': '← → - смена полосы. Пролетай над ледниками, чтобы снять их, потом над 📡, чтобы отправить фото!',
-  '← → to change lane. Fly over 🌀 hurricanes to image them and send the images home!': '← → - смена полосы. Пролетай над ураганами 🌀 и отправляй снимки домой!',
-  '← → to change lane. Fly through particle clouds to measure them, then over 📡 to send data home!': '← → - смена полосы. Пролетай сквозь облака частиц, потом над 📡, чтобы отправить данные!',
-  '← → to change lane. Fly over cities to photograph them, then over 📡 to send photos home!': '← → - смена полосы. Пролетай над городами, потом над 📡, чтобы отправить фото!',
+  '← → to change lane.': '← → — смена полосы.', 'Tap the left or right side of the screen to change lane.': 'Нажми на левую или правую половину экрана, чтобы сменить полосу.',
+  'Tap 🛡️ for safe mode during solar storms.': 'Нажми 🛡️ — безопасный режим во время солнечных бурь.',
+  'Fly over ✦ to take a photo, then over 📡 to send it home!': 'Пролети над ✦, чтобы сфотографировать, потом над 📡, чтобы отправить домой!',
+  'Fly over 🔥 to photograph, then over 📡 to send photos home!': 'Пролетай над 🔥, чтобы снять, а потом над 📡, чтобы отправить фото домой!',
+  'Fly over glaciers to photograph them, then over 📡 to send photos home!': 'Пролетай над ледниками, чтобы снять их, потом над 📡, чтобы отправить фото!',
+  'Fly over 🌀 hurricanes to image them and send the images home!': 'Пролетай над ураганами 🌀 и отправляй снимки домой!',
+  'Fly through particle clouds to measure them, then over 📡 to send data home!': 'Пролетай сквозь облака частиц, потом над 📡, чтобы отправить данные!',
+  'Fly over cities to photograph them, then over 📡 to send photos home!': 'Пролетай над городами, потом над 📡, чтобы отправить фото!',
+  'You can change this on later missions.': 'Эту деталь можно будет поменять в следующих миссиях.',
 
   // new slots and instruments
   Body: 'Корпус', 'Smallest that fits': 'Самый маленький, куда всё влезет', 'Light and cheap. A CubeSat wears out in 3-4 years.': 'Лёгкий и дешёвый. CubeSat изнашивается за 3-4 года.',

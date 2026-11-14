@@ -71,6 +71,7 @@
 .g3d-career-canvas {
   position: absolute;
   inset: 0;
+  z-index: 1; /* own stacking context: the globe's pins (Html, z-index ≤ 20) stay under the header and dock (z 3) */
   width: 100%;
   height: 100%;
   cursor: grab;

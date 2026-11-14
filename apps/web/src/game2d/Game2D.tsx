@@ -1,26 +1,32 @@
 // 2D mission game: career map → brief → (test flight) → report → build → flight → report.
 // Six missions from easy to hard; each one adds a new engineering trade-off.
 // "Play first, design later": early missions start with a ready-made satellite that fails in instructive ways.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useT, type T } from '../i18n';
 import { analyse, slotsFor, type Analysis, type Build, type SlotId } from './config';
+import { RealityCard } from '../content/RealityCard';
+import { ResourcesScreen } from '../content/ResourcesScreen';
+import { sfx } from '../game3d/audio';
+import { SoundToggle } from '../game3d/SoundToggle';
 import { Flight2D, type FlightStats } from './Flight2D';
 import { Launch2D } from './Launch2D';
 import { MISSIONS, type Mission } from './missions';
 import { SatelliteArt } from './SatelliteArt';
-import { Career3D, Hangar3D, Launch3D } from '../game3d';
+// the 3D screens (and three.js) are loaded only when they are used; the 2D versions show meanwhile
+const Flight3D = lazy(() => import('../game3d/Flight3D'));
+const Career3D = lazy(() => import('../game3d/Career3D').then((m) => ({ default: m.Career3D })));
+const Hangar3D = lazy(() => import('../game3d/Hangar3D').then((m) => ({ default: m.Hangar3D })));
+const Launch3D = lazy(() => import('../game3d/Launch3D').then((m) => ({ default: m.Launch3D })));
 
-type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build';
-
-function canUse3D(): boolean {
-  if (location.search.includes('2d')) return false;
-  try {
-    const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
-  } catch {
-    return false;
-  }
+/** If the 3D flight cannot start (no WebGL context, chunk failed to load), fly the same mission in 2D. */
+class Fallback2D extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(e: unknown) { console.warn('3D flight failed, switching to 2D', e); }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
+
+type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build' | 'resources';
 
 // ---- progress (stars per mission), kept in this browser only
 const KEY = 'g2d-progress-v1';
@@ -31,7 +37,7 @@ function saveStars(v: Record<string, number>) {
   try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* private mode: progress lasts this visit only */ }
 }
 
-export function Game2D({ links }: { links: React.ReactNode }) {
+export function Game2D({ links, flight3d = false }: { links: React.ReactNode; flight3d?: boolean }) {
   const tr = useT();
   const { t } = tr;
   const [phase, setPhase] = useState<Phase>('career');
@@ -43,14 +49,20 @@ export function Game2D({ links }: { links: React.ReactNode }) {
   const [runId, setRunId] = useState(0);
   const [stars, setStars] = useState<Record<string, number>>(loadStars);
   const [openAll, setOpenAll] = useState(() => location.search.includes('all'));
-  const [is3D] = useState(canUse3D);
   const a = useMemo(() => analyse(build, mission), [build, mission]);
+  // start downloading the 3D flight (three.js) while the player reads the brief, so the flight starts at once
+  useEffect(() => { if (flight3d && phase !== 'career' && phase !== 'resources') void import('../game3d/Flight3D'); }, [flight3d, phase]);
 
   const onEnd = useCallback((s: FlightStats) => { setStats(s); setPhase('report'); }, []);
   // test hook for the bot playthroughs (scripts/bot-2d): fly mission X with build Y
   (window as unknown as Record<string, unknown>).__g2dPlay = (id: string, patch: Partial<Build>, test = false) => {
     const m = MISSIONS.find((x) => x.id === id)!;
     setMission(m); setBuild({ ...(test ? m.test! : m.start), ...patch } as Build); setIsTest(test); setRunId((n) => n + 1); setPhase('flight');
+  };
+  // test hook for scripts/model-shots: open the build screen (3D hangar) of mission X with build Y
+  (window as unknown as Record<string, unknown>).__g2dBuild = (id: string, patch: Partial<Build>, slot: SlotId | null = null) => {
+    const m = MISSIONS.find((x) => x.id === id)!;
+    setMission(m); setBuild({ ...m.start, ...patch } as Build); setFocus(slot); setPhase('build');
   };
   const fly = (test: boolean) => { setIsTest(test); setRunId((n) => n + 1); setPhase('launch'); };
   const toBuild = (slot: SlotId | null) => { setFocus(slot); setPhase('build'); };
@@ -64,26 +76,52 @@ export function Game2D({ links }: { links: React.ReactNode }) {
   return (
     <div className="runner g2d">
       <header className="runner-top">
-        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' ? t('Mission Control') : `${mission.num}. ${t(mission.title)}`}</small></div>
+        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : `${mission.num}. ${t(mission.title)}`}</small></div>
         <div className="runner-links">
           {phase !== 'career' && phase !== 'flight' && phase !== 'launch' && <button className="link" onClick={() => setPhase('career')}>{t('🗺️ All missions')}</button>}
-          {links}
+          {phase !== 'flight' && phase !== 'launch' && phase !== 'resources' && <button className="link" onClick={() => setPhase('resources')}>{t('📚 NASA Resources')}</button>}
+          <SoundToggle />
+          {/* in flight only the sound button: nothing that leaves the mission or restarts it by accident */}
+          {phase !== 'flight' && phase !== 'launch' && links}
         </div>
       </header>
-      {phase === 'career' && (is3D
-        ? <Career3D stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />
+      {phase === 'career' && (flight3d
+        ? (
+          <Fallback2D fallback={<Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}>
+            <Suspense fallback={<Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}>
+              <Career3D stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />
+            </Suspense>
+          </Fallback2D>
+        )
         : <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />)}
       {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} />}
-      {phase === 'launch' && (is3D
-        ? <Launch3D key={runId} build={build} mission={mission} onDone={() => setPhase('flight')} />
+      {phase === 'launch' && (flight3d
+        ? (
+          <Fallback2D key={runId} fallback={<Launch2D build={build} onDone={() => setPhase('flight')} />}>
+            <Suspense fallback={<div className="runner-stage g2d-launch" />}><Launch3D build={build} mission={mission} onDone={() => setPhase('flight')} /></Suspense>
+          </Fallback2D>
+        )
         : <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />)}
-      {phase === 'flight' && <Flight2D key={runId} p={a.flight} m={mission} onEnd={onEnd} />}
+      {phase === 'flight' && (flight3d
+        ? (
+          <Fallback2D key={runId} fallback={<Flight2D p={a.flight} m={mission} onEnd={onEnd} />}>
+            <Suspense fallback={<div className="runner-stage g2d-flight" />}><Flight3D p={a.flight} m={mission} build={build} onEnd={onEnd} /></Suspense>
+          </Fallback2D>
+        )
+        : <Flight2D key={runId} p={a.flight} m={mission} onEnd={onEnd} />)}
       {phase === 'report' && stats && (
         <Report tr={tr} m={mission} a={a} stats={stats} isTest={isTest} onStars={record} onFix={toBuild} onAgain={() => fly(isTest)}
           onNext={mission.num < MISSIONS.length ? () => pick(MISSIONS[mission.num]) : undefined} onCareer={() => setPhase('career')} />
       )}
-      {phase === 'build' && (is3D
-        ? <Hangar3D m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />
+      {phase === 'resources' && <ResourcesScreen onBack={() => setPhase('career')} />}
+      {phase === 'build' && (flight3d
+        ? (
+          <Fallback2D fallback={<BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}>
+            <Suspense fallback={<BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}>
+              <Hangar3D m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />
+            </Suspense>
+          </Fallback2D>
+        )
         : <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />)}
     </div>
   );
@@ -131,7 +169,7 @@ function requirements(t: T['t'], m: Mission, a: Analysis, s?: FlightStats): Req[
     ? { ok: s.delivered >= m.goal, text: t('{label} delivered: {d} of {n}', { label: t(m.targets.label), d: s.delivered, n: m.goal }) }
     : { ok: true, text: t('Deliver at least {n} {label} to Earth', { n: m.goal, label: t(m.targets.label) }) });
   out.push(s
-    ? { ok: s.survived, text: s.survived ? t('Worked for all {n} years', { n: m.years }) : s.decayed ? t('Fell from orbit early') : s.wornOut ? t('Wore out before the end') : t('Destroyed by space junk or radiation') }
+    ? { ok: s.survived, text: s.survived ? (m.years === 1 ? t('Worked for the whole year') : t('Worked for all {n} years', { n: m.years })) : s.decayed ? t('Fell from orbit early') : s.wornOut ? t('Wore out before the end') : t('Destroyed by space junk or radiation') }
     : { ok: true, text: t('Work for the whole {n}-year mission', { n: m.years }) });
   if (m.maxResolutionM !== undefined) out.push(s
     ? { ok: a.flight.sharp, text: a.flight.sharp ? t('Images sharp enough') : t('Images too blurry') }
@@ -208,7 +246,7 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
   const all = met === reqs.length;
   const stars = all ? (stats.delivered >= m.goal * 1.5 ? 3 : 2) : met >= reqs.length - 1 && stats.delivered >= m.goal / 2 ? 1 : 0;
   // record once per report
-  useEffect(() => { if (!isTest) onStars(stars); }, [stats]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!isTest) onStars(stars); if (all) sfx.win(); else sfx.lose(); }, [stats]); // eslint-disable-line react-hooks/exhaustive-deps
   const lessons = lessonsFor(m, a, stats);
   const slots = slotsFor(m);
   const slotTitle = (id: SlotId) => t(slots.find((s) => s.id === id)?.title ?? id);
@@ -227,12 +265,15 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
             {lessons.map((l, i) => (
               <div key={i} className="g2d-lesson">
                 <span>💡 {t(l.text, l.params)}</span>
-                {!l.locked && <button onClick={() => onFix(l.slot)}>{t('Change: {s}', { s: slotTitle(l.slot) })} →</button>}
+                {l.locked
+                  ? <small className="g2d-later">{t('You can change this on later missions.')}</small>
+                  : <button onClick={() => onFix(l.slot)}>{t('Change: {s}', { s: slotTitle(l.slot) })} →</button>}
               </div>
             ))}
           </div>
         )}
         {all && stars < 3 && <p className="g2d-note center">{t('For ★★★ deliver {n} or more.', { n: Math.ceil(m.goal * 1.5) })}</p>}
+        {all && <RealityCard missionId={m.id} />}
         <div className="g2d-actions">
           {all && onNext && <button className="r-btn" onClick={onNext}>{t('Next mission')} →</button>}
           {all && !onNext && <button className="r-btn" onClick={onCareer}>{t('🏆 All missions done!')}</button>}

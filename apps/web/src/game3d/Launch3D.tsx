@@ -9,6 +9,7 @@ import { useT } from '../i18n';
 import type { Build } from '../game2d/config';
 import { MISSIONS, type Mission } from '../game2d/missions';
 import { SatelliteModel } from './SatelliteModel';
+import { sfx } from './audio';
 import './game3d.css';
 
 interface RocketSpec {
@@ -134,8 +135,9 @@ function LaunchWorld({
   };
 
   useFrame((_, dtRaw) => {
-    const dt = Math.min(dtRaw, 0.05);
-    elapsed.current += dt;
+    const dt = Math.min(dtRaw, 0.05); // smooth animation steps
+    // the timeline follows the real clock, so the launch ends after T_END s even at a low frame rate (≤ 9 s)
+    elapsed.current += Math.min(dtRaw, 0.5);
     const tt = elapsed.current;
 
     // 1. Caption phase
@@ -530,6 +532,14 @@ export function Launch3D({ build, mission = MISSIONS[0], onDone }: Launch3DProps
 
   const spec = ROCKET_SPECS[build.rocket] ?? ROCKET_SPECS.rideshare;
   const km = ORBIT_KM[build.orbit] ?? 500;
+
+  // sounds follow the launch phases (same sounds as Launch2D, plus separation and release)
+  useEffect(() => {
+    if (phaseKey === '3' || phaseKey === '2' || phaseKey === '1') sfx.countdown();
+    else if (phaseKey === 'liftoff') { sfx.countdown(true); sfx.liftoff(); }
+    else if (phaseKey === 'stage' || phaseKey === 'fairing') sfx.separation();
+    else if (phaseKey === 'release') sfx.released();
+  }, [phaseKey]);
 
   const caption = useMemo(() => {
     switch (phaseKey) {

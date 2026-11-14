@@ -86,6 +86,7 @@ function CareerGlobe({
   const { t } = useT();
   const { camera, size } = useThree();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
+  const globeRef = useRef<THREE.Mesh>(null!);
   const [day, night] = useLoader(THREE.TextureLoader, ['/textures/earth-day.webp', '/textures/earth-night.webp']);
   day.colorSpace = night.colorSpace = THREE.SRGBColorSpace;
 
@@ -98,8 +99,9 @@ function CareerGlobe({
     [day, night],
   );
 
-  // Pull camera slightly back on narrow portrait phone screens so the whole globe + pins fit comfortably
-  const baseDist = size.width < 600 ? 2.65 : 2.25;
+  // Pull the camera back on narrow portrait screens so the globe and its pins fit the width, not just the height
+  const aspect = size.width / Math.max(1, size.height);
+  const baseDist = aspect < 0.7 ? 3.3 : size.width < 600 ? 2.65 : 2.25;
   const flyGoal = useMemo(() => new THREE.Vector3(), []);
   const flyLeft = useRef(0);
 
@@ -142,12 +144,12 @@ function CareerGlobe({
         ref={controlsRef}
         enablePan={false}
         minDistance={1.65}
-        maxDistance={3.4}
+        maxDistance={Math.max(3.4, baseDist + 0.6)}
         rotateSpeed={0.75}
       />
 
-      {/* Earth Mesh */}
-      <mesh>
+      {/* Earth Mesh (also hides the pins on the far side: Html occlude) */}
+      <mesh ref={globeRef}>
         <sphereGeometry args={[R_GLOBE, 64, 48]} />
         <shaderMaterial uniforms={uniforms} vertexShader={earthShader.vertex} fragmentShader={earthShader.fragment} />
       </mesh>
@@ -196,7 +198,7 @@ function CareerGlobe({
             </group>
 
             {/* Interactive HTML Marker Badge */}
-            <Html position={pinPos} center zIndexRange={[20, 0]}>
+            <Html position={pinPos} center zIndexRange={[20, 0]} occlude={[globeRef]}>
               <button
                 type="button"
                 className={`g3d-pin ${open ? '' : 'locked'} ${isActive ? 'active' : ''}`}

@@ -1,4 +1,5 @@
-// Bot playthroughs of the 2D missions: node scripts/bot-2d.mjs [url]
+// Bot playthroughs of the missions: node scripts/bot-2d.mjs [url] [missionId]
+// Plays the 3D flight by default; add 2d to the url (http://localhost:5199/?all&2d) for the 2D flight.
 // Plays each mission with a "bad" (test/start) build and a "good" build and prints the result.
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -11,28 +12,23 @@ const RUNS = [
   ['spaceweather', {}, false, 'nosafe'], ['spaceweather', {}, false, 'safe'], ['spaceweather', { computer: 'obc-rad', panels: 'solar-deploy-s', battery: 'batt-m', stations: 'st2' }, false, 'nosafe'],
   ['mapping', {}], ['mapping', { camera: 'cam-hires', antenna: 'x-band', body: 'smallsat', panels: 'solar-deploy-l', battery: 'batt-l', memory: 'm12', stations: 'st2' }, false, 'safe'],
 ];
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader'] });
 async function run([id, patch, test = false, mode = 'safe']) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   await page.goto(url);
   await page.waitForFunction(() => window.__g2dPlay);
   await page.evaluate(([id, patch, test]) => window.__g2dPlay(id, patch, test), [id, patch, test]);
   const res = await page.evaluate(async (mode) => {
-    let lane = 1;
+    // the same bot as the sim tests (sim.ts botInput): nearest reachable target, dodge debris
     return await new Promise((done) => {
       const tick = () => {
-        const s = window.__g2d;
-        if (!s) return setTimeout(tick, 50);
-        if (s.ended) return setTimeout(() => done({ ...s.st, delivered: Math.floor(s.delivered) }), 50);
-        const W = document.querySelector('.g2d-canvas').clientHeight, satX = W * 0.28; // vertical scroller: distances run along the height
-        const ahead = s.objs.filter((o) => !o.done && o.x > satX - 32).sort((a, b) => a.x - b.x);
-        const tgt = ahead.find((o) => o.kind === 'target' && o.lane >= 0 && o.x < satX + W * 0.7);
-        let want = tgt ? tgt.lane : 1;
-        const danger = (l) => ahead.some((o) => o.kind === 'debris' && o.lane === l && o.x - satX < 160);
-        if (danger(want)) want = [0, 1, 2].filter((l) => !danger(l)).sort((a, b) => Math.abs(a - want) - Math.abs(b - want))[0] ?? want;
-        while (lane < want) { window.__g2dMove(1); lane++; }
-        while (lane > want) { window.__g2dMove(-1); lane--; }
-        if (mode === 'safe') window.__g2dSafe?.(s.storm >= 1);
+        const s = window.__g3d ?? window.__g2d;
+        const P = window.__g3d ? 'g3d' : 'g2d';
+        if (!s || !window.__simBot) return setTimeout(tick, 50);
+        if (s.ended) return setTimeout(() => done({ ...s.stats }), 50);
+        const input = window.__simBot(s, mode === 'safe');
+        for (let d = input.lane - s.lane; d !== 0; d -= Math.sign(d)) window[`__${P}Move`](Math.sign(d));
+        window[`__${P}Safe`]?.(input.safe);
         setTimeout(tick, 40);
       };
       tick();
@@ -40,7 +36,7 @@ async function run([id, patch, test = false, mode = 'safe']) {
   }, mode);
   await page.close();
   const short = Object.fromEntries(Object.entries(res).filter(([, v]) => v !== 0 && v !== false));
-  console.log(id.padEnd(13), (test ? 'TEST ' : '') + mode.padEnd(6), JSON.stringify(patch), '→', JSON.stringify(short));
+  console.log(url.includes('2d') ? '2D' : '3D', id.padEnd(13), (test ? 'TEST ' : '') + mode.padEnd(6), JSON.stringify(patch), '→', JSON.stringify(short));
 }
 const only = process.argv[3];
 await Promise.all(RUNS.filter((r) => !only || r[0] === only).map(run));

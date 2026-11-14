@@ -21,5 +21,7 @@ jobs:
         run: npm test
       - name: Mission balance
         run: npm run check:missions
+      - name: 3D satellite model (no overlaps, nothing floating, shield encloses all)
+        run: npm run check:model
       - name: Build
         run: npm run build

@@ -13,6 +13,68 @@ export const BUS_DIMS: Record<string, [number, number, number]> = {
   'medium-bus': [1.42, 1.34, 1.42],
 };
 
+export interface Box3D {
+  name: string;
+  min: [number, number, number];
+  max: [number, number, number];
+  attachedFace: 'body' | 'top' | 'bottom' | 'left' | 'right' | 'front' | 'back' | 'enclosing';
+}
+
+/**
+ * Axis-aligned boxes of every external part, the same geometry the model below draws (fully deployed).
+ * Used for the debris-shield radius here and by model.check.ts (no overlaps, nothing floating, shield encloses all).
+ */
+export function computeSatelliteBoxes(build: Build, m: Mission): { bus: [number, number, number]; boxes: Box3D[]; shieldRadius: number } {
+  const busId = analyse(build, m).design.busId;
+  const [w, h, d] = BUS_DIMS[busId] ?? BUS_DIMS['cubesat-12u'];
+  const boxes: Box3D[] = [];
+
+  // solar panels
+  const wingLen = build.panels === 'solar-deploy-l' ? 1.32 : build.panels === 'solar-deploy-s' ? 0.72 : 0;
+  const wingDepth = build.panels === 'solar-deploy-l' ? Math.min(0.56, d * 0.82) : Math.min(0.42, d * 0.68);
+  if (wingLen > 0) {
+    boxes.push({ name: 'panels-left', min: [-(w / 2 + 0.08 + wingLen), h * 0.08 - 0.035, -wingDepth / 2], max: [-w / 2, h * 0.08 + 0.035, wingDepth / 2], attachedFace: 'left' });
+    boxes.push({ name: 'panels-right', min: [w / 2, h * 0.08 - 0.035, -wingDepth / 2], max: [w / 2 + 0.08 + wingLen, h * 0.08 + 0.035, wingDepth / 2], attachedFace: 'right' });
+  } else {
+    boxes.push({ name: 'panels-front-upper', min: [-w * 0.39, h * 0.07, d / 2], max: [w * 0.39, h * 0.41, d / 2 + 0.01], attachedFace: 'front' });
+  }
+
+  // antenna on top (+Y)
+  if (build.antenna === 'uhf') {
+    boxes.push({ name: 'antenna-uhf', min: [w * 0.22 - 0.04, h / 2, -0.04], max: [w * 0.22 + 0.25, h / 2 + 0.52, 0.04], attachedFace: 'top' });
+  } else if (build.antenna === 's-band') {
+    boxes.push({ name: 'antenna-s-band', min: [-w * 0.23, h / 2, -d * 0.23], max: [w * 0.23, h / 2 + 0.06, d * 0.23], attachedFace: 'top' });
+  } else {
+    const dishR = Math.min(0.32, w * 0.46);
+    boxes.push({ name: 'antenna-x-band', min: [-dishR, h / 2, -dishR], max: [dishR, h / 2 + 0.14 + dishR * 0.65, dishR], attachedFace: 'top' });
+  }
+
+  // front-face indicators
+  boxes.push({ name: 'battery', min: [-w * 0.39, -h / 2 + 0.06, d / 2], max: [-w * 0.03, -h / 2 + 0.30, d / 2 + 0.025], attachedFace: 'front' });
+  boxes.push({ name: 'memory', min: [w * 0.21 - Math.min(0.12, w * 0.18), -h / 2 + 0.085, d / 2], max: [w * 0.21 + Math.min(0.12, w * 0.18), -h / 2 + 0.275, d / 2 + 0.026], attachedFace: 'front' });
+  const compHalfW = (build.computer === 'obc-rad' ? Math.min(0.34, w * 0.56) : Math.min(0.26, w * 0.46)) / 2;
+  boxes.push({ name: 'computer', min: [-compHalfW, -h * 0.03 - 0.085, d / 2], max: [compHalfW, -h * 0.03 + 0.085, d / 2 + 0.026], attachedFace: 'front' });
+
+  // instrument at the bottom (-Y, looking at Earth)
+  const camDepth = build.camera === 'cam-hires' || build.camera === 'magnetometer' ? 0.44 : 0.26;
+  boxes.push({ name: `instrument-${build.camera}`, min: [-0.32, -h / 2 - camDepth, -0.28], max: [0.28, -h / 2, 0.28], attachedFace: 'bottom' });
+
+  // thruster at the back (-Z)
+  if (build.thruster === 'prop-cold') {
+    boxes.push({ name: 'thruster', min: [-0.095, -h * 0.22 - 0.095, -d / 2 - 0.18], max: [0.095, -h * 0.22 + 0.095, -d / 2], attachedFace: 'back' });
+  }
+
+  // the shield sphere must enclose the farthest corner of the body and of every part
+  const far = (b: { min: number[]; max: number[] }) => Math.hypot(
+    Math.max(Math.abs(b.min[0]), Math.abs(b.max[0])),
+    Math.max(Math.abs(b.min[1]), Math.abs(b.max[1])),
+    Math.max(Math.abs(b.min[2]), Math.abs(b.max[2])),
+  );
+  const shieldRadius = Math.max(far({ min: [-w / 2, -h / 2, -d / 2], max: [w / 2, h / 2, d / 2] }), ...boxes.map(far)) + 0.08;
+
+  return { bus: [w, h, d], boxes, shieldRadius };
+}
+
 let cachedSolarTex: THREE.CanvasTexture | null = null;
 function getSolarTexture(): THREE.CanvasTexture | undefined {
   if (typeof document === 'undefined') return undefined;
@@ -96,7 +158,11 @@ export function getSlotFocusTarget(slot: SlotId | null, build: Build, mission: M
   const busId = analyse(build, mission).design.busId;
   const [w, h, d] = BUS_DIMS[busId] ?? BUS_DIMS['cubesat-12u'];
   const wing = build.panels === 'solar-deploy-l' ? 1.32 : build.panels === 'solar-deploy-s' ? 0.72 : 0;
-  const baseDist = Math.max(2.3, (w + wing * 2) * 0.95, h * 1.65);
+  // frame the whole satellite: the UHF whip and the dish stick out above, the instrument below
+  const top = build.antenna === 'uhf' ? 0.52 : build.antenna === 'x-band' ? 0.14 + Math.min(0.32, w * 0.46) * 0.65 : 0.06;
+  const bottom = build.camera === 'cam-hires' || build.camera === 'magnetometer' ? 0.44 : 0.26;
+  const midY = (top - bottom) / 2;
+  const baseDist = Math.max(2.3, (w + wing * 2) * 0.95, (h + top + bottom) * 1.45);
 
   switch (slot) {
     case 'camera':
@@ -116,11 +182,11 @@ export function getSlotFocusTarget(slot: SlotId | null, build: Build, mission: M
     case 'thruster':
       return { target: [0, -h * 0.22, -d / 2 - 0.08], camPos: [0.75, -h * 0.15, -d / 2 - 1.35] };
     case 'body':
-      return { target: [0, 0, 0], camPos: [baseDist * 0.65, baseDist * 0.35, baseDist * 0.75] };
+      return { target: [0, midY, 0], camPos: [baseDist * 0.65, midY + baseDist * 0.35, baseDist * 0.75] };
     case 'shield':
-      return { target: [0, 0, 0], camPos: [baseDist * 0.78, baseDist * 0.42, baseDist * 0.88] };
+      return { target: [0, midY, 0], camPos: [baseDist * 0.78, midY + baseDist * 0.42, baseDist * 0.88] };
     default:
-      return { target: [0, 0, 0], camPos: [baseDist * 0.68, baseDist * 0.42, baseDist * 0.82] };
+      return { target: [0, midY, 0], camPos: [baseDist * 0.68, midY + baseDist * 0.42, baseDist * 0.82] };
   }
 }
 
@@ -161,10 +227,8 @@ export function SatelliteModel({
   const deploy = THREE.MathUtils.clamp(deployProgress, 0, 1);
   const wingFoldAngle = (1 - deploy) * (Math.PI * 0.47);
 
-  // Shield radius encloses body, unfolded wings, and any nadir instrument/antenna
-  const maxExtentX = w / 2 + (wingLen > 0 ? (0.08 + wingLen) * (0.25 + 0.75 * deploy) : 0.14);
-  const maxExtentY = h / 2 + (build.camera === 'cam-hires' || build.camera === 'magnetometer' ? 0.46 : 0.28);
-  const shieldR = Math.max(maxExtentX, maxExtentY, d / 2 + 0.24) + 0.12;
+  // Shield radius encloses the body and every part, antennas included (same boxes as model.check.ts)
+  const shieldR = useMemo(() => computeSatelliteBoxes(build, mission).shieldRadius, [build, mission]);
 
   // Highlight pulse for the currently selected slot in Hangar3D
   const highlightRingRef = useRef<THREE.Mesh>(null);

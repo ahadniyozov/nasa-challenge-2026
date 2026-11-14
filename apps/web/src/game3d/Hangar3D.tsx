@@ -52,10 +52,31 @@ function HangarCameraRig({
   return null;
 }
 
+/** Test hook for scripts/model-shots.mjs: triangles of the visible satellite model (budget ≤ 3000). */
+function ModelStats() {
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    const w = window as unknown as Record<string, unknown>;
+    w.__g3dModelTriangles = () => {
+      let n = 0;
+      scene.getObjectByName('satellite-root')?.traverseVisible((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const g = mesh.geometry;
+        n += (g.index ? g.index.count : g.attributes.position.count) / 3;
+      });
+      return Math.round(n);
+    };
+    return () => { delete w.__g3dModelTriangles; };
+  }, [scene]);
+  return null;
+}
+
 function HangarStage({ build, mission, focus }: { build: Build; mission: Mission; focus: SlotId | null }) {
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   return (
     <>
+      <ModelStats />
       <color attach="background" args={['#060b22']} />
       <Stars radius={70} depth={30} count={1200} factor={3} fade />
       <ambientLight intensity={0.65} />

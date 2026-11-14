@@ -60,7 +60,6 @@ export function SatelliteArt({ build, mission }: { build: Build; mission?: Missi
       {build.camera === 'cam-thermal' && <g><rect x={cx - 18} y={top + h} width="36" height="18" rx="4" fill="#ddd" /><circle cx={cx} cy={top + h + 18} r="10" fill="#7a1f1f" stroke="#ff6a3d" strokeWidth="3" /></g>}
       {build.camera === 'cam-hires' && <g><rect x={cx - 24} y={top + h} width="48" height="46" rx="6" fill="#e6e6e6" stroke="#aaa" /><ellipse cx={cx} cy={top + h + 46} rx="22" ry="7" fill="#1c2a55" /></g>}
 
-      {/* thruster */}
       {build.camera === 'spectro' && <g><rect x={cx - 20} y={top + h} width="40" height="26" rx="4" fill="#ddd" /><rect x={cx - 14} y={top + h + 22} width="28" height="8" rx="2" fill="url(#rainbow)" /></g>}
       {build.camera === 'radiometer' && <g><path d={`M${cx - 30} ${top + h} q30 44 60 0 z`} fill="#e6e6e6" stroke="#aaa" /><circle cx={cx} cy={top + h + 14} r="4" fill="#555" /></g>}
       {build.camera === 'magnetometer' && <g><line x1={left} y1={cy + 10} x2={left - 60} y2={cy + 44} stroke="#ccc" strokeWidth="3" /><rect x={left - 72} y={cy + 38} width="18" height="14" rx="3" fill="#c0392b" /><rect x={left - 63} y={cy + 38} width="9" height="14" fill="#2c6fd1" /></g>}
@@ -69,6 +68,7 @@ export function SatelliteArt({ build, mission }: { build: Build; mission?: Missi
       {build.computer === 'obc-rad'
         ? <g><rect x={cx - 16} y={cy + 4} width="32" height="22" rx="3" fill="#20304f" stroke="#4dd2ff" strokeWidth="2.5" /><text x={cx} y={cy + 19} textAnchor="middle" fontSize="11" fill="#4dd2ff" fontWeight="700">RAD</text></g>
         : <rect x={cx - 12} y={cy + 6} width="24" height="16" rx="2" fill="#20304f" stroke="#7d8bab" />}
+      {/* thruster */}
       {build.thruster === 'prop-cold' && <path d={`M${left + w} ${cy + 18} l18 -8 l0 22 z`} fill="#777" />}
     </svg>
   );
