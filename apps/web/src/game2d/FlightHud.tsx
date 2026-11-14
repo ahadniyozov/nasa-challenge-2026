@@ -1,6 +1,7 @@
 // What the 2D and 3D flights share around the simulation: the HTML HUD over the canvas,
 // keyboard / touch controls, the bot hooks and the messages for SimState.events.
 import { useEffect, useRef, type MutableRefObject } from 'react';
+import { sfx } from '../game3d/audio';
 import { useT, type T } from '../i18n';
 import type { FlightParams } from './config';
 import type { Mission, TargetKind } from './missions';
@@ -31,6 +32,7 @@ export class FlightMessages {
     const t = this.t;
     switch (e.type) {
       case 'photo': return ['📸 +1', 0.6];
+      case 'contact': return null;
       case 'hit': return [t('💥 Space junk hit! Lost a photo'), 1.3];
       case 'memoryFull': return [t('💾 Memory full! Find a station'), 1.3];
       case 'dark': return [t('🌑 Too dark for this camera'), 1.3];
@@ -48,6 +50,21 @@ export class FlightMessages {
       case 'decay': return [t('🔥 The air pulled the satellite down - it burned up'), 3];
       case 'wornOut': return [t('🔧 Its parts wore out - the satellite stopped working'), 3];
       case 'end': return null;
+    }
+  }
+}
+
+/** Sounds for this frame's events (call after every stepSim, in 2D and 3D). */
+export function playFlightSounds(s: SimState) {
+  for (const e of s.events) {
+    switch (e.type) {
+      case 'photo': sfx.photo(); break;
+      case 'hit': sfx.hit(); break;
+      case 'contact': sfx.station(); break;
+      case 'stormWarn': sfx.storm(); break;
+      case 'stormHit': sfx.zap(); break;
+      case 'batteryOut': sfx.powerDown(); break;
+      default: break;
     }
   }
 }

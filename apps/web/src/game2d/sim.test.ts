@@ -57,9 +57,14 @@ describe('sim', () => {
   it('events report what happened this frame only', () => {
     const { m, p } = flight('first', SOLUTIONS.first);
     const s = createSim(p, m, 3);
-    let photos = 0;
-    while (!s.ended) { stepSim(s, 1 / 60, botInput(s, true)); photos += s.events.filter((e) => e.type === 'photo').length; }
+    let photos = 0, passes = 0;
+    while (!s.ended) {
+      stepSim(s, 1 / 60, botInput(s, true));
+      photos += s.events.filter((e) => e.type === 'photo').length;
+      passes += s.events.filter((e) => e.type === 'contact').length;
+    }
     expect(photos).toBe(s.stats.captured);
+    expect(passes).toBeGreaterThan(0);
     expect(s.events.some((e) => e.type === 'end')).toBe(true);
   });
 });

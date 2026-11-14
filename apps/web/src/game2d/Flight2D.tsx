@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { FlightParams } from './config';
-import { FlightHud, FlightMessages, hudOf, initialHud, useFlightControls } from './FlightHud';
+import { FlightHud, FlightMessages, hudOf, initialHud, playFlightSounds, useFlightControls } from './FlightHud';
 import type { Mission, TargetKind } from './missions';
 import { createSim, stepSim, type FlightStats } from './sim';
 
@@ -53,6 +53,7 @@ export function Flight2D({ p, m, onEnd, seed }: { p: FlightParams; m: Mission; o
       const W = cv.clientWidth, H = cv.clientHeight;
       stepSim(s, dt, control.current);
       msgs.take(s);
+      playFlightSounds(s);
       if (s.events.some((e) => e.type === 'end')) endTimer = window.setTimeout(() => endRef.current({ ...s.stats }), 900);
       const shadow = s.shadow, safe = s.safe;
 

@@ -43,7 +43,7 @@ export interface SimObject {
 }
 
 export type SimEventType =
-  | 'photo' | 'hit' | 'memoryFull' | 'dark' | 'blurry' | 'asleep' | 'outOfReach'
+  | 'photo' | 'hit' | 'contact' | 'memoryFull' | 'dark' | 'blurry' | 'asleep' | 'outOfReach'
   | 'stormWarn' | 'stormHit' | 'stormSafe' | 'stormSurvived'
   | 'batteryOut' | 'decay' | 'wornOut' | 'end';
 /** `id` is the object that caused the event (photo, hit, ...), when there is one. */
@@ -250,8 +250,10 @@ function tick(s: SimState, dt: number) {
   }
   if (s.objects.some((o) => o.ahead < DESPAWN_BEHIND)) s.objects = s.objects.filter((o) => o.ahead >= DESPAWN_BEHIND);
 
-  // ---- downlink
+  // ---- downlink ('contact' = a ground station pass begins; a GEO satellite is always in contact)
+  const wasContact = s.contact;
   s.contact = contact && !asleep;
+  if (s.contact && !wasContact && !p.alwaysInContact) ev('contact');
   if (s.contact && s.memory > 0) {
     const sent = Math.min(s.memory, p.photosPerSec * dt);
     s.memory -= sent; s.delivered += sent; s.battery -= 3 * dt;

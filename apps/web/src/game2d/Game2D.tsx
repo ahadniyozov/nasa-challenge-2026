@@ -8,8 +8,12 @@ import { Flight2D, type FlightStats } from './Flight2D';
 import { Launch2D } from './Launch2D';
 import { MISSIONS, type Mission } from './missions';
 import { SatelliteArt } from './SatelliteArt';
+import { RealityCard } from '../content/RealityCard';
+import { ResourcesScreen } from '../content/ResourcesScreen';
+import { sfx } from '../game3d/audio';
+import { SoundToggle } from '../game3d/SoundToggle';
 
-type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build';
+type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build' | 'resources';
 
 // ---- progress (stars per mission), kept in this browser only
 const KEY = 'g2d-progress-v1';
@@ -52,9 +56,11 @@ export function Game2D({ links }: { links: React.ReactNode }) {
   return (
     <div className="runner g2d">
       <header className="runner-top">
-        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' ? t('Mission Control') : `${mission.num}. ${t(mission.title)}`}</small></div>
+        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : `${mission.num}. ${t(mission.title)}`}</small></div>
         <div className="runner-links">
           {phase !== 'career' && phase !== 'flight' && phase !== 'launch' && <button className="link" onClick={() => setPhase('career')}>{t('🗺️ All missions')}</button>}
+          {phase !== 'flight' && phase !== 'launch' && phase !== 'resources' && <button className="link" onClick={() => setPhase('resources')}>{t('📚 NASA Resources')}</button>}
+          <SoundToggle />
           {links}
         </div>
       </header>
@@ -66,6 +72,7 @@ export function Game2D({ links }: { links: React.ReactNode }) {
         <Report tr={tr} m={mission} a={a} stats={stats} isTest={isTest} onStars={record} onFix={toBuild} onAgain={() => fly(isTest)}
           onNext={mission.num < MISSIONS.length ? () => pick(MISSIONS[mission.num]) : undefined} onCareer={() => setPhase('career')} />
       )}
+      {phase === 'resources' && <ResourcesScreen onBack={() => setPhase('career')} />}
       {phase === 'build' && <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}
     </div>
   );
@@ -190,7 +197,7 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
   const all = met === reqs.length;
   const stars = all ? (stats.delivered >= m.goal * 1.5 ? 3 : 2) : met >= reqs.length - 1 && stats.delivered >= m.goal / 2 ? 1 : 0;
   // record once per report
-  useEffect(() => { if (!isTest) onStars(stars); }, [stats]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!isTest) onStars(stars); if (all) sfx.win(); else sfx.lose(); }, [stats]); // eslint-disable-line react-hooks/exhaustive-deps
   const lessons = lessonsFor(m, a, stats);
   const slots = slotsFor(m);
   const slotTitle = (id: SlotId) => t(slots.find((s) => s.id === id)?.title ?? id);
@@ -215,6 +222,7 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
           </div>
         )}
         {all && stars < 3 && <p className="g2d-note center">{t('For ★★★ deliver {n} or more.', { n: Math.ceil(m.goal * 1.5) })}</p>}
+        {all && <RealityCard missionId={m.id} />}
         <div className="g2d-actions">
           {all && onNext && <button className="r-btn" onClick={onNext}>{t('Next mission')} →</button>}
           {all && !onNext && <button className="r-btn" onClick={onCareer}>{t('🏆 All missions done!')}</button>}

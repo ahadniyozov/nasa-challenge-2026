@@ -24,7 +24,7 @@ export function LangToggle() {
   const { lang, setLang } = useLang();
   return (
     <div className="lang-toggle">
-      {(['ru', 'en'] as const).map((l) => (
+      {(['en', 'ru'] as const).map((l) => (
         <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>{l.toUpperCase()}</button>
       ))}
     </div>
