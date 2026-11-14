@@ -171,7 +171,7 @@ export function Launch2D({ build, onDone }: { build: Build; onDone(): void }) {
       else if (tt < T_STAGE) cap(t('Climbing to {km} km…', { km: km.toLocaleString() }));
       else if (tt < T_FAIRING) cap(t('First stage separation'));
       else if (tt < T_RELEASE) cap(t('Fairing opens'));
-      else cap(t('Satellite released - in orbit!'));
+      else cap(t('Spacecraft separation. In orbit'));
 
       if (tt > T_END) finish();
       else raf = requestAnimationFrame(frame);
@@ -187,7 +187,7 @@ export function Launch2D({ build, onDone }: { build: Build; onDone(): void }) {
     <div className="runner-stage g2d-launch" onClick={() => doneRef.current()}>
       <canvas ref={canvas} className="g2d-canvas" />
       <div className={`g2d-countdown ${/^\d$/.test(caption) ? 'big' : ''}`} key={caption}>{caption}</div>
-      <div className="g2d-launch-info">🚀 {t(R.name)} · 🌍 {(ORBIT_KM[build.orbit] ?? 0).toLocaleString()} {t('km')}</div>
+      <div className="g2d-launch-info">{t('{rocket} rocket to {km} km', { rocket: t(R.name), km: (ORBIT_KM[build.orbit] ?? 0).toLocaleString() })}</div>
       <div className="g2d-skip">{t('Click to skip')}</div>
     </div>
   );

@@ -1,68 +1,151 @@
-/* Theme of the game: --r-* colour tokens, top bar, HUD, chips and buttons (used by game2d, game3d and content). */
+/* GO / NO-GO theme: an engineering center, not a toy.
+   Design screens are light mission documents (clean-room white, graphite, aluminium, Kapton gold);
+   the GO button is NASA International Orange; flight and launch are dark space.
+   Type: Barlow (body) and Barlow Condensed (titles, numbers, the GO / NO-GO verdict). */
 .runner {
-  --r-bg: #050a1f; --r-card: #121a45ee; --r-line: #2c3780; --r-text: #f3f5ff; --r-dim: #aab3e6;
-  --r-accent: #4dd2ff; --r-good: #3ddc84; --r-warn: #ffc53d; --r-bad: #ff5c6c;
-  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: var(--r-text); background: var(--r-bg); height: 100%; display: flex; flex-direction: column;
-  user-select: none; -webkit-user-select: none;
+  --paper: #f2f3f1;      /* clean-room white */
+  --sheet: #ffffff;
+  --ink: #1d2329;        /* graphite */
+  --steel: #5f6b77;      /* secondary text */
+  --rule: #d3d8dc;       /* hairlines */
+  --rule-strong: #aeb7bf;/* aluminium */
+  --orange: #d9480f;     /* International Orange, darkened for white text */
+  --orange-ink: #b33a0b;
+  --kapton: #c8922a;     /* MLI foil */
+  --go: #1e7f45;
+  --nogo: #c2261f;
+  --caution: #a8690f;
+  --space: #0a1320;
+  --space-panel: rgba(10, 19, 32, 0.82);
+  --space-line: rgba(174, 183, 191, 0.28);
+  --space-text: #e9edf1;
+  --space-dim: #9aa6b2;
+
+  /* legacy tokens still used by the canvases' overlays */
+  --r-accent: #6ec3ff; --r-good: #3fbf7a; --r-warn: #e0a13a; --r-bad: #ef5b52; --r-text: var(--space-text); --r-dim: var(--space-dim); --r-line: var(--space-line);
+
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--paper);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-variant-numeric: tabular-nums;
 }
 .runner button { font-family: inherit; }
-.runner-top { display: flex; align-items: center; gap: 12px; padding: 8px 16px; position: relative; z-index: 30; background: #050a1fcc; }
-.runner-top .logo { font-weight: 900; letter-spacing: 1px; }
-.runner-top .logo span { color: var(--r-accent); margin: 0 2px; }
-.runner-top .logo small { font-weight: 700; color: var(--r-dim); margin-left: 6px; letter-spacing: 0; }
-.runner-links { margin-left: auto; display: flex; gap: 12px; align-items: center; }
-.runner .link { color: var(--r-dim); background: none; border: 0; text-decoration: underline; cursor: pointer; }
-.runner-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: manipulation; }
+.runner :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 
-.r-btn { background: linear-gradient(135deg, #ff8a3d, #ff3d6e); color: #fff; border: 0; border-radius: 16px; padding: 14px 34px; font-size: 21px; font-weight: 900; cursor: pointer; margin-top: 6px; }
-.r-btn:hover { transform: translateY(-2px); }
+/* ---- top bar */
+.runner-top {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 20px; height: 52px; flex: none;
+  background: var(--sheet); border-bottom: 1px solid var(--rule);
+  position: relative; z-index: 30;
+}
+.runner-top .logo { font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: 0.02em; white-space: nowrap; }
+.runner-top .logo span { color: var(--orange); margin: 0 1px; }
+.runner-top .logo small { font-family: 'Barlow', sans-serif; font-size: 15px; font-weight: 500; color: var(--steel); margin-left: 14px; letter-spacing: 0; }
+.runner-links { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.runner .link {
+  background: none; border: 0; border-radius: 6px; padding: 6px 10px; margin: 0;
+  color: var(--ink); font-size: 15px; font-weight: 500; text-decoration: none; cursor: pointer;
+}
+.runner .link:hover { background: var(--paper); }
+.runner .link svg { width: 18px; height: 18px; vertical-align: -4px; }
+.runner .lang-toggle { border-color: var(--rule); }
+.runner .lang-toggle button { color: var(--steel); font-family: 'Barlow', sans-serif; font-weight: 600; }
+.runner .lang-toggle button.on { background: var(--ink); color: #fff; }
+/* in flight the bar goes dark so the screen reads as one console */
+.runner.in-space .runner-top { background: var(--space); border-color: #1d2a3a; color: var(--space-text); }
+.runner.in-space .runner-top .logo small { color: var(--space-dim); }
+.runner.in-space .link { color: var(--space-text); }
+.runner.in-space .link:hover { background: #16233a; }
 
-/* HUD */
-.r-hud { position: absolute; left: 0; right: 0; display: flex; gap: 8px; padding: 10px 12px; align-items: center; flex-wrap: wrap; pointer-events: none; z-index: 5; }
+.runner-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: manipulation; background: var(--space); color: var(--space-text); }
+
+/* ---- buttons */
+.r-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--orange); color: #fff; border: 0; border-radius: 6px;
+  padding: 13px 26px; font-size: 18px; font-weight: 700; cursor: pointer;
+}
+.r-btn:hover:not(:disabled) { background: var(--orange-ink); }
+.r-btn:disabled { background: #c9ced3; color: #6b747c; cursor: not-allowed; }
+.g2d-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 6px;
+  padding: 12px 22px; font-size: 17px; font-weight: 600; cursor: pointer;
+}
+.g2d-ghost:hover { border-color: var(--ink); }
+.g2d-ghost.small { font-size: 15px; padding: 8px 14px; }
+
+/* ---- flight HUD (dark glass over the canvas) */
+.r-hud { position: absolute; left: 0; right: 0; display: flex; gap: 8px; padding: 12px; align-items: stretch; flex-wrap: wrap; pointer-events: none; z-index: 5; }
 .r-hud.top { top: 0; }
-.r-hud.bottom { bottom: 0; justify-content: center; }
-.r-hud > * { background: #0b1030d9; border: 2px solid var(--r-line); border-radius: 14px; padding: 6px 12px; }
-.r-goal b { font-size: 26px; display: block; line-height: 1.1; }
-.r-goal small { color: var(--r-dim); }
-.r-mem { display: flex; align-items: center; gap: 4px; font-size: 18px; }
-.r-mem span { width: 14px; height: 18px; border-radius: 4px; border: 2px solid #5a6aa8; }
-.r-mem span.full { background: var(--r-warn); border-color: var(--r-warn); }
-.r-hp { font-size: 20px; letter-spacing: 2px; }
-.r-orbit { margin-left: auto; min-width: 220px; }
-.r-orbit small { color: var(--r-dim); }
-.r-strip { position: relative; height: 16px; background: #ffd76b55; border-radius: 8px; margin-top: 4px; overflow: visible; }
-.r-strip .shadow { position: absolute; top: 0; bottom: 0; background: #0a0f2e; border-radius: 4px; }
-.r-strip i { position: absolute; top: -4px; font-style: normal; font-size: 13px; transform: translateX(-50%); }
-.r-strip .you { position: absolute; top: -3px; width: 6px; height: 22px; background: #fff; border-radius: 3px; transform: translateX(-50%); box-shadow: 0 0 8px #fff; }
-.r-chip { font-weight: 800; color: var(--r-text); }
-.r-chip.day { color: #ffd76b; }
-.r-chip.night { color: #9fb2ff; }
-.r-chip.contact { color: var(--r-good); border-color: var(--r-good); animation: r-pulse .6s infinite alternate; }
-.r-chip.safe { pointer-events: auto; cursor: pointer; font-size: 15px; }
-.r-chip.safe.on { background: #1b4b6b; border-color: var(--r-accent); color: var(--r-accent); }
+.r-hud.bottom { bottom: 0; justify-content: center; align-items: center; }
+.r-hud > * {
+  background: var(--space-panel); border: 1px solid var(--space-line); border-radius: 8px;
+  padding: 7px 12px; color: var(--space-text); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.r-hud label, .r-hud .k { display: block; font-size: 12px; color: var(--space-dim); font-weight: 500; line-height: 1.2; }
+.r-goal b { font-family: var(--display); font-size: 30px; font-weight: 700; display: block; line-height: 1; }
+.r-goal b em { font-style: normal; color: var(--space-dim); font-weight: 500; }
+.r-mem { display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+.r-mem .cells, .r-hp .cells { display: flex; gap: 3px; }
+.r-mem .cells span { width: 10px; height: 16px; border-radius: 2px; border: 1px solid #5d6b7a; }
+.r-mem .cells span.full { background: var(--kapton); border-color: var(--kapton); }
+.r-hp { display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+.r-hp .cells span { width: 22px; height: 8px; border-radius: 1px; background: #e9edf1; }
+.r-hp .cells span.lost { background: transparent; outline: 1px solid #5d6b7a; outline-offset: -1px; }
+.r-orbit { margin-left: auto; min-width: 240px; }
+.r-strip { position: relative; height: 10px; background: #e3b34a; border-radius: 2px; margin-top: 6px; }
+.r-strip .shadow { position: absolute; top: 0; bottom: 0; background: #0a1320; outline: 1px solid #3b4a5c; }
+.r-strip .you { position: absolute; top: -4px; width: 3px; height: 18px; background: #fff; transform: translateX(-50%); }
+.g2d-flight .mini-track { height: 3px; background: #23324a; margin-top: 7px; }
+.g2d-flight .mini-track div { height: 100%; background: var(--space-text); }
+.r-chip { font-weight: 600; font-size: 15px; }
+.r-chip.day { color: #f2c463; }
+.r-chip.night { color: #a9b8ff; }
+.r-chip.contact { color: #5fe39a; border-color: #2f8f5c; }
+.r-chip.storm { color: #ffb15c; border-color: #b8691f; }
+.r-chip.storm.now { animation: r-pulse .5s infinite alternate; }
 @keyframes r-pulse { to { opacity: .55; } }
-.r-battery { display: flex; align-items: center; gap: 8px; font-size: 18px; }
-.r-bar { width: 140px; height: 12px; background: #0a0f2e; border-radius: 8px; overflow: hidden; }
-.r-bar div { height: 100%; background: var(--r-good); transition: width .1s; }
+.r-battery { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--space-dim); }
+.r-bar { width: 140px; height: 8px; background: #23324a; border-radius: 1px; overflow: hidden; }
+.r-bar div { height: 100%; background: #5fe39a; transition: width .1s linear; }
 .r-bar div.low { background: var(--r-bad); }
 
-.r-flash { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: 900; text-shadow: 0 2px 12px #000; pointer-events: none; z-index: 6; text-align: center; }
-.r-tip { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e2760f2; border: 2px solid var(--r-accent); border-radius: 16px; padding: 10px 16px; font-weight: 800; font-size: 17px; text-align: center; max-width: 92%; pointer-events: none; z-index: 6; }
+.r-flash {
+  position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
+  font-family: var(--display); font-size: 30px; font-weight: 700; letter-spacing: 0.01em;
+  color: #fff; text-shadow: 0 2px 16px rgba(0, 0, 0, .8); pointer-events: none; z-index: 6; text-align: center; max-width: 90%;
+}
+.r-tip {
+  position: absolute; left: 50%; transform: translateX(-50%); top: 140px;
+  background: var(--space-panel); border: 1px solid var(--space-line); border-radius: 8px;
+  padding: 10px 16px; font-size: 16px; text-align: center; max-width: min(560px, 92%);
+  pointer-events: none; z-index: 6; color: var(--space-text);
+}
+.r-tip kbd { font-family: inherit; font-weight: 700; border: 1px solid var(--space-line); border-radius: 4px; padding: 0 6px; }
 
 @media (max-width: 700px) {
-  .runner-top { padding: 6px 10px; gap: 6px 8px; flex-wrap: wrap; }
-  .runner-links { flex-wrap: wrap; justify-content: flex-end; }
-  .runner-top .logo { white-space: nowrap; font-size: 14px; }
+  .runner-top { padding: 0 10px; gap: 8px; height: 48px; }
+  .runner-top .logo { font-size: 19px; }
   .runner-top .logo small { display: none; }
-  .runner-links { gap: 8px; font-size: 12px; }
-  .runner-links .link { white-space: nowrap; }
-  .r-tip { font-size: 14px; bottom: auto; top: 250px; }
+  .runner .link { padding: 6px; font-size: 14px; }
+  .runner .link .label { display: none; }
   .r-hud { gap: 6px; padding: 8px; }
-  .r-hud > * { padding: 4px 8px; border-radius: 10px; }
-  .r-goal b { font-size: 20px; }
-  .r-goal small { display: none; }
+  .r-hud > * { padding: 5px 8px; }
+  .r-goal b { font-size: 24px; }
   .r-orbit { min-width: 0; flex: 1 1 100%; margin-left: 0; }
   .r-bar { width: 80px; }
   .r-chip { font-size: 13px; }
+  .r-flash { font-size: 24px; }
+  .r-tip { font-size: 14px; top: auto; bottom: 90px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .r-chip.storm.now { animation: none; }
 }

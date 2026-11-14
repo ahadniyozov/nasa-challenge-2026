@@ -31,24 +31,24 @@ export class FlightMessages {
   private message(e: SimEvent, s: SimState): [string, number] | null {
     const t = this.t;
     switch (e.type) {
-      case 'photo': return ['📸 +1', 0.6];
+      case 'photo': return [t('Photo taken'), 0.6];
       case 'contact': return null;
-      case 'hit': return [t('💥 Space junk hit! Lost a photo'), 1.3];
-      case 'memoryFull': return [t('💾 Memory full! Find a station'), 1.3];
-      case 'dark': return [t('🌑 Too dark for this camera'), 1.3];
-      case 'blurry': return [t('😕 Too blurry from this height'), 1.3];
-      case 'asleep': return [t('😴 Satellite asleep'), 1.3];
+      case 'hit': return [t('Debris strike. One photo lost'), 1.3];
+      case 'memoryFull': return [t('Memory full. Fly over a ground station'), 1.3];
+      case 'dark': return [t('Too dark for this camera'), 1.3];
+      case 'blurry': return [t('Too blurry from this altitude'), 1.3];
+      case 'asleep': return [t('Satellite asleep'), 1.3];
       case 'outOfReach': {
         const n = s.stats.outOfReach;
-        return n <= 2 || n % 4 === 0 ? [t('🧭 Too far north - your orbit never flies there'), 1.6] : null;
+        return n <= 2 || n % 4 === 0 ? [t('Out of reach: this orbit never flies that far north'), 1.6] : null;
       }
-      case 'stormWarn': return [t('☀️ Solar storm coming! Safe mode protects the computer'), 2.6];
-      case 'stormSafe': return [t('🛡️ Safe mode: asleep, but safe'), 1.3];
-      case 'stormSurvived': return [t('💪 Radiation-hardened computer keeps working!'), 2];
-      case 'stormHit': return [t('⚡ Radiation crashed the computer! Memory lost'), 2.2];
-      case 'batteryOut': return [t('🪫 Battery empty - satellite asleep'), 1.3];
-      case 'decay': return [t('🔥 The air pulled the satellite down - it burned up'), 3];
-      case 'wornOut': return [t('🔧 Its parts wore out - the satellite stopped working'), 3];
+      case 'stormWarn': return [t('Solar storm ahead. Safe mode protects the computer'), 2.6];
+      case 'stormSafe': return [t('Safe mode: asleep, but safe'), 1.3];
+      case 'stormSurvived': return [t('Hardened computer kept working'), 2];
+      case 'stormHit': return [t('Radiation crashed the computer. Memory lost'), 2.2];
+      case 'batteryOut': return [t('Battery empty. Satellite asleep'), 1.3];
+      case 'decay': return [t('Orbit decayed. The satellite burned up'), 3];
+      case 'wornOut': return [t('Parts wore out. The satellite stopped working'), 3];
       case 'end': return null;
     }
   }
@@ -109,12 +109,12 @@ export function FlightHud({ p, m, hud, control }: { p: FlightParams; m: Mission;
   return (
     <>
       <div className="r-hud top">
-        <div className="r-goal"><b>📡 {Math.floor(hud.delivered)} / {p.goal}</b><small>{t(m.targets.label)} {t('delivered')}</small></div>
-        <div className="r-mem">💾 {Array.from({ length: p.memory }, (_, i) => <span key={i} className={i < Math.round(hud.memory) ? 'full' : ''} />)}</div>
-        <div className="r-hp">{Array.from({ length: p.hearts }, (_, i) => <span key={i}>{i < hud.hearts ? '❤️' : '🖤'}</span>)}</div>
+        <div className="r-goal"><span className="k">{t('Delivered to Earth')}</span><b>{Math.floor(hud.delivered)} <em>/ {p.goal}</em></b></div>
+        <div className="r-mem"><span className="k">{t('Memory')}</span><span className="cells">{Array.from({ length: p.memory }, (_, i) => <span key={i} className={i < Math.round(hud.memory) ? 'full' : ''} />)}</span></div>
+        <div className="r-hp"><span className="k">{t('Hull')}</span><span className="cells">{Array.from({ length: p.hearts }, (_, i) => <span key={i} className={i < hud.hearts ? '' : 'lost'} />)}</span></div>
         <div className="r-orbit">
-          <small>{m.laps ? t('Orbit {n} of {m}', { n: lap, m: p.orbits }) : t('Year {n} of {m}', { n: lap, m: p.orbits })}</small>
-          <div className="r-strip">
+          <span className="k">{m.laps ? t('Orbit {n} of {m}', { n: lap, m: p.orbits }) : t('Year {n} of {m}', { n: lap, m: p.orbits })}</span>
+          <div className="r-strip" title={t('Sunlight and Earth\'s shadow on this orbit')}>
             <div className="shadow" style={{ left: `${(0.5 - p.shadowFraction / 2) * 100}%`, width: `${p.shadowFraction * 100}%` }} />
             <div className="you" style={{ left: `${ph * 100}%` }} />
           </div>
@@ -122,22 +122,22 @@ export function FlightHud({ p, m, hud, control }: { p: FlightParams; m: Mission;
         </div>
       </div>
       <div className="r-hud bottom">
-        <div className={`r-chip ${hud.shadow ? 'night' : 'day'}`}>{hud.shadow ? t('🌑 Earth\'s shadow') : t('☀️ Sunlight - charging')}</div>
-        <div className="r-battery">🔋<div className="r-bar"><div className={hud.battery < 25 ? 'low' : ''} style={{ width: `${hud.battery}%` }} /></div></div>
-        {hud.contact && <div className="r-chip contact">{t('📡 Sending data home!')}</div>}
-        {hud.storm > 0 && <div className="r-chip storm">{hud.storm === 1 ? t('⚠️ Solar storm coming') : t('☀️ Solar storm!')}</div>}
+        <div className={`r-chip ${hud.shadow ? 'night' : 'day'}`}>{hud.shadow ? t('In Earth\'s shadow') : t('In sunlight, charging')}</div>
+        <div className="r-battery">{t('Battery')}<div className="r-bar"><div className={hud.battery < 25 ? 'low' : ''} style={{ width: `${hud.battery}%` }} /></div></div>
+        {hud.contact && <div className="r-chip contact">{t('Downlink: sending data home')}</div>}
+        {hud.storm > 0 && <div className={`r-chip storm ${hud.storm === 2 ? 'now' : ''}`}>{hud.storm === 1 ? t('Solar storm ahead') : t('Solar storm')}</div>}
       </div>
-      {hud.flash && <div className="r-flash">{hud.flash}</div>}
+      {hud.flash && <div className="r-flash" role="status">{hud.flash}</div>}
       {hud.t < 5 && (
         <div className="r-tip">
-          {TOUCH ? t('Tap the left or right side of the screen to change lane.') : t('← → to change lane.')} {t(TIPS[m.targets.kind])}
-          {p.storms > 0 ? ' ' + (TOUCH ? t('Tap 🛡️ for safe mode during solar storms.') : t('SPACE = safe mode during solar storms.')) : ''}
+          {TOUCH ? t('Tap the left or right side of the screen to change lane.') : t('Use the arrow keys to change lane.')} {t(TIPS[m.targets.kind])}
+          {p.storms > 0 ? ' ' + (TOUCH ? t('Tap Safe mode during solar storms.') : t('SPACE turns on safe mode during solar storms.')) : ''}
         </div>
       )}
       <div className="g2d-touch">
-        <button onPointerDown={() => tap(-1)} aria-label="left">◀</button>
-        {p.storms > 0 && <button className={`safe ${hud.safe ? 'on' : ''}`} onPointerDown={() => { control.current.safe = !control.current.safe; }} aria-label="safe mode">🛡️</button>}
-        <button onPointerDown={() => tap(1)} aria-label="right">▶</button>
+        <button onPointerDown={() => tap(-1)} aria-label={t('Move left')}>‹</button>
+        {p.storms > 0 && <button className={`safe ${hud.safe ? 'on' : ''}`} onPointerDown={() => { control.current.safe = !control.current.safe; }} aria-pressed={hud.safe}>{t('Safe mode')}</button>}
+        <button onPointerDown={() => tap(1)} aria-label={t('Move right')}>›</button>
       </div>
     </>
   );
@@ -147,10 +147,10 @@ export function FlightHud({ p, m, hud, control }: { p: FlightParams; m: Mission;
 const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches;
 
 const TIPS: Record<TargetKind, string> = {
-  star: 'Fly over ✦ to take a photo, then over 📡 to send it home!',
-  fire: 'Fly over 🔥 to photograph, then over 📡 to send photos home!',
-  ice: 'Fly over glaciers to photograph them, then over 📡 to send photos home!',
-  storm: 'Fly over 🌀 hurricanes to image them and send the images home!',
-  particle: 'Fly through particle clouds to measure them, then over 📡 to send data home!',
-  city: 'Fly over cities to photograph them, then over 📡 to send photos home!',
+  star: 'Fly over a target to take a photo, then over a ground station to send it home.',
+  fire: 'Fly over a fire to photograph it, then over a ground station to send the photo home.',
+  ice: 'Fly over glaciers to photograph them, then over a ground station to send the photos home.',
+  storm: 'Fly over hurricanes to image them and send the images home.',
+  particle: 'Fly through particle clouds to measure them, then over a ground station to send the data home.',
+  city: 'Fly over cities to photograph them, then over a ground station to send the photos home.',
 };

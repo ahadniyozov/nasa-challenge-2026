@@ -5,8 +5,9 @@ import { create } from 'zustand';
 import { RU_2D } from './ru-2d';
 import { RU_CONTENT } from './ru-content';
 import { RU_MISSIONS } from './ru-missions';
+import { RU_UI } from './ru-ui';
 
-const RU: Record<string, string> = { ...RU_2D, ...RU_MISSIONS, ...RU_CONTENT };
+const RU: Record<string, string> = { ...RU_2D, ...RU_MISSIONS, ...RU_CONTENT, ...RU_UI };
 
 export type Lang = 'en' | 'ru';
 

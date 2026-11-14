@@ -1,6 +1,6 @@
 /* Page basics. The game's own theme (--r-* tokens, HUD, buttons) is in game2d/theme.css. */
 :root {
-  --bg: #05080f;
+  --bg: #f2f3f1;
   --line: #1c2a44;
   --text: #dbe4f3;
   --dim: #7d8ba3;

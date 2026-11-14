@@ -4,7 +4,8 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useT, type T } from '../i18n';
 import { analyse, slotsFor, type Analysis, type Build, type SlotId } from './config';
-import { RealityCard } from '../content/RealityCard';
+import { RealityCard, Sketch } from '../content/RealityCard';
+import { REAL_MISSIONS } from '../content/realMissions';
 import { ResourcesScreen } from '../content/ResourcesScreen';
 import { sfx } from '../game3d/audio';
 import { SoundToggle } from '../game3d/SoundToggle';
@@ -12,11 +13,9 @@ import { Flight2D, type FlightStats } from './Flight2D';
 import { Launch2D } from './Launch2D';
 import { MISSIONS, type Mission } from './missions';
 import { SatelliteArt } from './SatelliteArt';
-// the 3D screens (and three.js) are loaded only when they are used; the 2D versions show meanwhile
+
+// the 3D flight (and three.js) is loaded only when it is used
 const Flight3D = lazy(() => import('../game3d/Flight3D'));
-const Career3D = lazy(() => import('../game3d/Career3D').then((m) => ({ default: m.Career3D })));
-const Hangar3D = lazy(() => import('../game3d/Hangar3D').then((m) => ({ default: m.Hangar3D })));
-const Launch3D = lazy(() => import('../game3d/Launch3D').then((m) => ({ default: m.Launch3D })));
 
 /** If the 3D flight cannot start (no WebGL context, chunk failed to load), fly the same mission in 2D. */
 class Fallback2D extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -59,11 +58,6 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
     const m = MISSIONS.find((x) => x.id === id)!;
     setMission(m); setBuild({ ...(test ? m.test! : m.start), ...patch } as Build); setIsTest(test); setRunId((n) => n + 1); setPhase('flight');
   };
-  // test hook for scripts/model-shots: open the build screen (3D hangar) of mission X with build Y
-  (window as unknown as Record<string, unknown>).__g2dBuild = (id: string, patch: Partial<Build>, slot: SlotId | null = null) => {
-    const m = MISSIONS.find((x) => x.id === id)!;
-    setMission(m); setBuild({ ...m.start, ...patch } as Build); setFocus(slot); setPhase('build');
-  };
   const fly = (test: boolean) => { setIsTest(test); setRunId((n) => n + 1); setPhase('launch'); };
   const toBuild = (slot: SlotId | null) => { setFocus(slot); setPhase('build'); };
   const pick = (m: Mission) => { setMission(m); setBuild(m.start); setStats(null); setPhase('brief'); };
@@ -73,35 +67,22 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
     setStars(next); saveStars(next);
   };
 
+  const inSpace = phase === 'flight' || phase === 'launch';
   return (
-    <div className="runner g2d">
+    <div className={`runner g2d ${inSpace ? 'in-space' : ''}`}>
       <header className="runner-top">
-        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : `${mission.num}. ${t(mission.title)}`}</small></div>
-        <div className="runner-links">
-          {phase !== 'career' && phase !== 'flight' && phase !== 'launch' && <button className="link" onClick={() => setPhase('career')}>{t('🗺️ All missions')}</button>}
-          {phase !== 'flight' && phase !== 'launch' && phase !== 'resources' && <button className="link" onClick={() => setPhase('resources')}>{t('📚 NASA Resources')}</button>}
+        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : t(mission.title)}</small></div>
+        <nav className="runner-links" aria-label={t('Menu')}>
+          {!inSpace && phase !== 'career' && <button className="link" onClick={() => setPhase('career')}>{t('Missions')}</button>}
+          {!inSpace && phase !== 'resources' && <button className="link" onClick={() => setPhase('resources')} title={t('NASA Resources')}>{t('Resources')}</button>}
           <SoundToggle />
           {/* in flight only the sound button: nothing that leaves the mission or restarts it by accident */}
-          {phase !== 'flight' && phase !== 'launch' && links}
-        </div>
+          {!inSpace && links}
+        </nav>
       </header>
-      {phase === 'career' && (flight3d
-        ? (
-          <Fallback2D fallback={<Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}>
-            <Suspense fallback={<Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}>
-              <Career3D stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />
-            </Suspense>
-          </Fallback2D>
-        )
-        : <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />)}
-      {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} />}
-      {phase === 'launch' && (flight3d
-        ? (
-          <Fallback2D key={runId} fallback={<Launch2D build={build} onDone={() => setPhase('flight')} />}>
-            <Suspense fallback={<div className="runner-stage g2d-launch" />}><Launch3D build={build} mission={mission} onDone={() => setPhase('flight')} /></Suspense>
-          </Fallback2D>
-        )
-        : <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />)}
+      {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}
+      {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} onBack={() => setPhase('career')} />}
+      {phase === 'launch' && <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />}
       {phase === 'flight' && (flight3d
         ? (
           <Fallback2D key={runId} fallback={<Flight2D p={a.flight} m={mission} onEnd={onEnd} />}>
@@ -114,16 +95,18 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
           onNext={mission.num < MISSIONS.length ? () => pick(MISSIONS[mission.num]) : undefined} onCareer={() => setPhase('career')} />
       )}
       {phase === 'resources' && <ResourcesScreen onBack={() => setPhase('career')} />}
-      {phase === 'build' && (flight3d
-        ? (
-          <Fallback2D fallback={<BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}>
-            <Suspense fallback={<BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}>
-              <Hangar3D m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />
-            </Suspense>
-          </Fallback2D>
-        )
-        : <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />)}
+      {phase === 'build' && <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}
     </div>
+  );
+}
+
+/** Three stars as small drawn marks (no emoji fonts needed). */
+function Stars({ n, label }: { n: number; label: string }) {
+  const star = 'M10 1.8l2.5 5.3 5.8.7-4.3 4 1.1 5.7L10 14.7 4.9 17.5 6 11.8 1.7 7.8l5.8-.7z';
+  return (
+    <span className="g2d-stars" role="img" aria-label={label}>
+      {[0, 1, 2].map((i) => <svg key={i} viewBox="0 0 20 20"><path d={star} className={i < n ? 'on' : 'off'} /></svg>)}
+    </span>
   );
 }
 
@@ -132,28 +115,38 @@ function Career({ stars, openAll, onOpenAll, onPick }: { stars: Record<string, n
   const { t } = useT();
   const unlocked = (m: Mission) => openAll || m.num === 1 || (stars[MISSIONS[m.num - 2].id] ?? 0) > 0;
   const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
+  const levelBars = { Cadet: 1, Engineer: 2, 'Flight Director': 3 } as const;
   return (
     <div className="g2d-page">
-      <div className="g2d-career">
-        <h1>{t('Choose a mission')}</h1>
-        <p className="g2d-note center">{t('Each customer needs a different satellite. Earn at least 1 ★ to unlock the next mission.')} <b>★ {total} / {MISSIONS.length * 3}</b></p>
-        <div className="g2d-missions">
+      <div className="g2d-doc">
+        <h1>{t('Mission manifest')}</h1>
+        <p className="g2d-lead">{t('Six customers, six satellites. Each mission adds one new engineering problem. Earn a star to unlock the next one.')}</p>
+        <ol className="g2d-manifest">
           {MISSIONS.map((m) => {
             const open = unlocked(m);
             const n = stars[m.id] ?? 0;
+            const sketch = REAL_MISSIONS[m.id]?.sketch ?? 'low';
             return (
-              <button key={m.id} className={`g2d-mcard ${open ? '' : 'locked'} lvl-${m.level.split(' ')[0].toLowerCase()}`} disabled={!open} onClick={() => onPick(m)}>
-                <div className="num">{m.num}</div>
-                <div className="emoji">{open ? m.emoji : '🔒'}</div>
-                <b>{t(m.title)}</b>
-                <span className="lvl">{t(m.level)}</span>
-                <small>{t(m.learn)}</small>
-                <div className="mstars">{[0, 1, 2].map((i) => <span key={i} className={i < n ? 'on' : ''}>★</span>)}</div>
-              </button>
+              <li key={m.id} className={`g2d-mrow ${open ? '' : 'locked'}`}>
+                <button disabled={!open} onClick={() => onPick(m)}>
+                  <span className="num">{m.num}</span>
+                  <Sketch kind={sketch} className="sk" />
+                  <span className="t">
+                    <b>{t(m.title)}</b>
+                    <span>{open ? t(m.customer.who) : t('Earn a star on mission {n} to unlock', { n: m.num - 1 })}</span>
+                  </span>
+                  <span className="lvl">{t(m.level)}<i>{[1, 2, 3].map((k) => <s key={k} className={k <= levelBars[m.level] ? 'on' : ''} />)}</i></span>
+                  <span className="spec"><b>${m.budgetM}M</b> {t('budget')}<br />{m.years === 1 ? t('1 year') : t('{n} years', { n: m.years })}</span>
+                  <Stars n={n} label={t('{n} of 3 stars', { n })} />
+                </button>
+              </li>
             );
           })}
+        </ol>
+        <div className="g2d-manifest-foot">
+          <span>{t('Stars earned: {n} of {m}', { n: total, m: MISSIONS.length * 3 })}</span>
+          {!openAll && <button className="g2d-ghost small" onClick={onOpenAll}>{t('Unlock all missions')}</button>}
         </div>
-        {!openAll && <div className="g2d-actions"><button className="g2d-ghost small" onClick={onOpenAll}>{t('🔓 Open all missions')}</button></div>}
       </div>
     </div>
   );
@@ -166,7 +159,7 @@ interface Req { ok: boolean; text: string }
 function requirements(t: T['t'], m: Mission, a: Analysis, s?: FlightStats): Req[] {
   const out: Req[] = [];
   out.push(s
-    ? { ok: s.delivered >= m.goal, text: t('{label} delivered: {d} of {n}', { label: t(m.targets.label), d: s.delivered, n: m.goal }) }
+    ? { ok: s.delivered >= m.goal, text: t('Delivered to Earth: {d} of {n} {label}', { label: t(m.targets.label), d: s.delivered, n: m.goal }) }
     : { ok: true, text: t('Deliver at least {n} {label} to Earth', { n: m.goal, label: t(m.targets.label) }) });
   out.push(s
     ? { ok: s.survived, text: s.survived ? (m.years === 1 ? t('Worked for the whole year') : t('Worked for all {n} years', { n: m.years })) : s.decayed ? t('Fell from orbit early') : s.wornOut ? t('Wore out before the end') : t('Destroyed by space junk or radiation') }
@@ -185,28 +178,44 @@ function requirements(t: T['t'], m: Mission, a: Analysis, s?: FlightStats): Req[
   return out;
 }
 
-function Brief({ m, onTest, onBuild }: { m: Mission; onTest(): void; onBuild(): void }) {
+function Brief({ m, onTest, onBuild, onBack }: { m: Mission; onTest(): void; onBuild(): void; onBack(): void }) {
   const tr = useT();
   const { t } = tr;
   const a = useMemo(() => analyse(m.start, m), [m]);
+  const reqs = requirements(t, m, a);
   return (
     <div className="g2d-page">
-      <div className="g2d-card brief">
-        <div className="g2d-tag">{t('Mission {n} of {m}', { n: m.num, m: MISSIONS.length })} · {t(m.level)} · <i>{t('based on')} {m.source}</i></div>
-        <div className="g2d-customer">
-          <div className="g2d-avatar">{m.customer.emoji}</div>
-          <div className="g2d-bubble">
-            <small>{t('Customer')}: {t(m.customer.who)}</small>
-            {t(m.customer.text)}
+      <div className="g2d-doc">
+        <button className="g2d-back" onClick={onBack}>{t('All missions')}</button>
+        <h1>{t('Mission {n}: {title}', { n: m.num, title: t(m.title) })}</h1>
+        <div className="g2d-brief">
+          <div>
+            <figure className="g2d-request">
+              <blockquote>{t(m.customer.text)}</blockquote>
+              <figcaption>{t(m.customer.who)}</figcaption>
+            </figure>
+            <h2>{t('Requirements')}</h2>
+            <table className="g2d-reqs">
+              <thead><tr><th scope="col">{t('ID')}</th><th scope="col">{t('The satellite must')}</th></tr></thead>
+              <tbody>{reqs.map((r, i) => <tr key={i}><td className="id">REQ-{i + 1}</td><td>{r.text}</td></tr>)}</tbody>
+            </table>
+            {m.test && <p className="g2d-note">{t('Our engineers already built a cheap test satellite. Fly it first and see what happens.')}</p>}
+            <div className="g2d-actions">
+              {m.test
+                ? <><button className="r-btn" onClick={onTest}>{t('Fly the test satellite')}</button><button className="g2d-ghost" onClick={onBuild}>{t('Design my own')}</button></>
+                : <button className="r-btn" onClick={onBuild}>{t('Design the satellite')}</button>}
+            </div>
           </div>
-        </div>
-        <h2>{t('Mission requirements')}</h2>
-        <ul className="g2d-reqs">{requirements(t, m, a).map((r, i) => <li key={i}>{r.text}</li>)}</ul>
-        <p className="g2d-note">💡 {t('You will learn')}: {t(m.learn)}</p>
-        {m.test && <p className="g2d-note">{t('Our engineers already built a cheap test satellite. Fly it first and see what happens!')}</p>}
-        <div className="g2d-actions">
-          {m.test && <button className="r-btn" onClick={onTest}>{t('🚀 Fly the test satellite')}</button>}
-          <button className={m.test ? 'g2d-ghost' : 'r-btn'} onClick={onBuild}>{t('🔧 Design the satellite')}</button>
+          <aside className="g2d-facts">
+            <dl>
+              <div><dt>{t('Budget')}</dt><dd>${m.budgetM}M</dd></div>
+              <div><dt>{t('Mission length')}</dt><dd>{m.years === 1 ? t('1 year') : t('{n} years', { n: m.years })}</dd></div>
+              <div><dt>{t('Goal')}</dt><dd>{m.goal} {t(m.targets.label)}</dd></div>
+              <div><dt>{t('Difficulty')}</dt><dd>{t(m.level)}</dd></div>
+            </dl>
+            <p><b>{t('What you will learn')}</b>{t(m.learn)}</p>
+            <p><b>{t('Based on')}</b>{m.source}</p>
+          </aside>
         </div>
       </div>
     </div>
@@ -224,8 +233,8 @@ function lessonsFor(m: Mission, a: Analysis, s: FlightStats): Lesson[] {
   if (m.needsContact && !f.alwaysInContact) out.push({ text: 'A low orbit flies over the ocean only now and then. A satellite 36,000 km high turns with the Earth and watches the same place nonstop - but it needs a big rocket.', slot: 'orbit' });
   if (s.decayed) out.push({ text: 'At 400 km thin air slowly pulls the satellite down - it fell after about 1 year. Choose a higher orbit or add a thruster.', slot: 'orbit' });
   if (s.wornOut) out.push({ text: 'A small CubeSat wears out after 3-4 years. A sturdy body lasts longer.', slot: 'body' });
-  if (s.stormHits > 0) out.push({ text: 'Solar storms crashed the computer {n} time(s). Turn on safe mode before a storm (SPACE / 🛡️), or pay for a radiation-hardened computer.', params: { n: s.stormHits }, slot: 'computer' });
-  if (f.photosPerSec < 0.5 && can('antenna')) out.push({ text: 'The walkie-talkie radio is far too slow - photos stayed on board. A real antenna sends them home in seconds.', slot: 'antenna' });
+  if (s.stormHits > 0) out.push({ text: 'Solar storms crashed the computer {n} time(s). Turn on safe mode before a storm (SPACE or the Safe mode button), or pay for a radiation-hardened computer.', params: { n: s.stormHits }, slot: 'computer' });
+  if (f.photosPerSec < 0.5 && can('antenna')) out.push({ text: 'The UHF radio is far too slow - photos stayed on board. An S-band radio sends them home in seconds.', slot: 'antenna' });
   if (s.batteryOuts > 0) out.push({ text: 'The battery ran flat in Earth\'s shadow {n} time(s). A bigger battery or bigger solar panels keep the satellite awake.', params: { n: s.batteryOuts }, slot: can('battery') ? 'battery' : 'orbit' });
   if (s.memoryFull > 0) out.push({ text: 'Memory was full {n} time(s) - new photos were lost. More memory, or send photos home more often.', params: { n: s.memoryFull }, slot: can('memory') ? 'memory' : 'stations' });
   if (s.lostInMemory > 0 && f.photosPerSec >= 0.5) out.push({ text: '{n} photos were still in memory at the end. More ground stations or a faster antenna would bring them home.', params: { n: s.lostInMemory }, slot: 'stations' });
@@ -250,36 +259,51 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
   const lessons = lessonsFor(m, a, stats);
   const slots = slotsFor(m);
   const slotTitle = (id: SlotId) => t(slots.find((s) => s.id === id)?.title ?? id);
+  const headline = all ? t('Mission accomplished') : isTest ? t('The test satellite was not good enough') : t('Not all requirements were met');
   return (
     <div className="g2d-page">
-      <div className="g2d-card report">
-        <div className="stars">{[0, 1, 2].map((i) => <span key={i} className={i < stars ? 'on' : ''}>★</span>)}</div>
-        <h1>{all ? t('Mission accomplished!') : isTest ? t('The test satellite was not good enough') : t('Not all requirements were met')}</h1>
-        <ul className="g2d-check">
-          {reqs.map((r, i) => <li key={i} className={r.ok ? 'ok' : 'bad'}>{r.ok ? '✅' : '❌'} {r.text}</li>)}
-        </ul>
-        {stats.stormsSafe + stats.stormsSurvived > 0 && <p className="g2d-note">☀️ {t('Solar storms: {a} slept through in safe mode, {b} survived with a hardened computer.', { a: stats.stormsSafe, b: stats.stormsSurvived })}</p>}
-        {lessons.length > 0 && (
-          <div className="g2d-lessons">
-            <h3>{t('Why - and what to change')}</h3>
-            {lessons.map((l, i) => (
-              <div key={i} className="g2d-lesson">
-                <span>💡 {t(l.text, l.params)}</span>
-                {l.locked
-                  ? <small className="g2d-later">{t('You can change this on later missions.')}</small>
-                  : <button onClick={() => onFix(l.slot)}>{t('Change: {s}', { s: slotTitle(l.slot) })} →</button>}
-              </div>
-            ))}
+      <div className="g2d-doc narrow">
+        <div className="g2d-verdict">
+          <strong className={all ? 'go' : 'nogo'}>{all ? 'GO' : 'NO-GO'}</strong>
+          <div>
+            <h1>{headline}</h1>
+            <p>{t('{met} of {n} requirements met', { met, n: reqs.length })}</p>
+            {!isTest && <Stars n={stars} label={t('{n} of 3 stars', { n: stars })} />}
           </div>
+        </div>
+        <h2>{t('Verification')}</h2>
+        <table className="g2d-reqs">
+          <thead><tr><th scope="col">{t('ID')}</th><th scope="col">{t('Result in flight')}</th><th scope="col">{t('Status')}</th></tr></thead>
+          <tbody>
+            {reqs.map((r, i) => (
+              <tr key={i}><td className="id">REQ-{i + 1}</td><td>{r.text}</td><td className={`res ${r.ok ? 'ok' : 'bad'}`}>{r.ok ? t('Met') : t('Not met')}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        {stats.stormsSafe + stats.stormsSurvived > 0 && <p className="g2d-note">{t('Solar storms: {a} slept through in safe mode, {b} survived with a hardened computer.', { a: stats.stormsSafe, b: stats.stormsSurvived })}</p>}
+        {lessons.length > 0 && (
+          <>
+            <h2>{t('Findings')}</h2>
+            <ul className="g2d-findings">
+              {lessons.map((l, i) => (
+                <li key={i}>
+                  <span>{t(l.text, l.params)}</span>
+                  {l.locked
+                    ? <small className="g2d-later">{t('You can change this on later missions.')}</small>
+                    : <button onClick={() => onFix(l.slot)}>{t('Change {s}', { s: slotTitle(l.slot).toLowerCase() })}</button>}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
-        {all && stars < 3 && <p className="g2d-note center">{t('For ★★★ deliver {n} or more.', { n: Math.ceil(m.goal * 1.5) })}</p>}
+        {all && stars < 3 && !isTest && <p className="g2d-note">{t('For three stars deliver {n} or more.', { n: Math.ceil(m.goal * 1.5) })}</p>}
         {all && <RealityCard missionId={m.id} />}
         <div className="g2d-actions">
-          {all && onNext && <button className="r-btn" onClick={onNext}>{t('Next mission')} →</button>}
-          {all && !onNext && <button className="r-btn" onClick={onCareer}>{t('🏆 All missions done!')}</button>}
-          {!all && <button className="r-btn" onClick={() => onFix(lessons.find((l) => !l.locked)?.slot ?? m.slots[0])}>{t('🔧 Design a better satellite')}</button>}
-          <button className="g2d-ghost" onClick={onAgain}>{t('🔁 Fly again')}</button>
-          {all && <button className="g2d-ghost" onClick={() => onFix(m.slots[0])}>{t('🔧 Improve')}</button>}
+          {all && onNext && <button className="r-btn" onClick={onNext}>{t('Next mission')}</button>}
+          {all && !onNext && <button className="r-btn" onClick={onCareer}>{t('All missions done')}</button>}
+          {!all && <button className="r-btn" onClick={() => onFix(lessons.find((l) => !l.locked)?.slot ?? m.slots[0])}>{t('Redesign the satellite')}</button>}
+          <button className="g2d-ghost" onClick={onAgain}>{t('Fly again')}</button>
+          {all && <button className="g2d-ghost" onClick={() => onFix(m.slots[0])}>{t('Improve the design')}</button>}
         </div>
       </div>
     </div>
@@ -291,8 +315,10 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mis
   const { t } = useT();
   const a = useMemo(() => analyse(build, m), [build, m]);
   const slots = useMemo(() => slotsFor(m), [m]);
-  const busName = { 'cubesat-3u': 'Tiny (3U)', 'cubesat-12u': 'Medium (12U)', smallsat: 'Large (150 kg)', 'medium-bus': 'Huge (800 kg)' }[a.design.busId] ?? a.design.busId;
-  const face = { good: '🙂', warn: '😬', bad: '😱' } as const;
+  const busName = { 'cubesat-3u': 'CubeSat 3U', 'cubesat-12u': 'CubeSat 12U', smallsat: 'SmallSat 150 kg', 'medium-bus': 'Medium bus 800 kg' }[a.design.busId] ?? a.design.busId;
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+  // the rocket and the budget block a launch; power and battery problems are the player's risk to take
+  const overLimit = a.gauges.filter((g) => g.level === 'bad').map((g) => t(g.label).toLowerCase());
 
   const slotRow = (id: SlotId) => {
     const slot = slots.find((s) => s.id === id)!;
@@ -300,14 +326,15 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mis
     const open = focus === id;
     return (
       <div key={id} className={`g2d-slot ${open ? 'open' : ''}`}>
-        <button className="g2d-slot-head" onClick={() => setFocus(open ? null : id)}>
-          <span className="e">{slot.emoji}</span><b>{t(slot.title)}</b><span className="v">{chosen.emoji} {t(chosen.title)}</span><span className="chev">{open ? '▴' : '▾'}</span>
+        <button className="g2d-slot-head" aria-expanded={open} onClick={() => setFocus(open ? null : id)}>
+          <b>{t(slot.title)}</b><span className="v">{t(chosen.title)}</span>
+          <svg className="chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
         </button>
         {open && (
-          <div className="g2d-opts">
+          <div className="g2d-opts" role="radiogroup" aria-label={t(slot.title)}>
             {slot.options.map((o) => (
-              <button key={o.id} className={`g2d-opt ${build[id] === o.id ? 'on' : ''}`} onClick={() => setBuild({ ...build, [id]: o.id })}>
-                <span className="e">{o.emoji}</span><b>{t(o.title)}</b>{o.text && <small>{t(o.text)}</small>}
+              <button key={o.id} role="radio" aria-checked={build[id] === o.id} className={`g2d-opt ${build[id] === o.id ? 'on' : ''}`} onClick={() => setBuild({ ...build, [id]: o.id })}>
+                <b>{t(o.title)}</b>{o.text && <small>{t(o.text)}</small>}
               </button>
             ))}
           </div>
@@ -321,29 +348,33 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mis
   return (
     <div className="g2d-build">
       <div className="g2d-art">
+        {m.slots.length < 6 && <p className="g2d-hint">{t('On this mission you choose only {n} things - the rest is ready.', { n: m.slots.length })}</p>}
         <SatelliteArt build={build} mission={m} />
-        <div className="g2d-size">{t('Satellite size')}: <b>{t(busName)}</b> · {Math.round(a.flight.massKg)} {t('kg')}</div>
-        {m.slots.length < 6 && <div className="g2d-size">{t('On this mission you choose only {n} things - the rest is ready.', { n: m.slots.length })}</div>}
+        <div className="g2d-titleblock">
+          <div><span>{t('Platform')}</span><b>{busName}</b></div>
+          <div><span>{t('Mass')}</span><b>{Math.round(a.flight.massKg)} {t('kg')}</b></div>
+        </div>
       </div>
       <div className="g2d-slots">
-        {sat.length > 0 && <h3>{t('🛰️ Satellite')}</h3>}
+        {sat.length > 0 && <h3>{t('Spacecraft')}</h3>}
         {sat.map((s) => slotRow(s.id))}
-        {mis.length > 0 && <h3>{t('🚀 Mission')}</h3>}
+        {mis.length > 0 && <h3>{t('Launch and operations')}</h3>}
         {mis.map((s) => slotRow(s.id))}
       </div>
       <footer className="g2d-foot">
         <div className="g2d-gauges">
           {a.gauges.map((g) => (
             <div key={g.id} className={`g2d-gauge ${g.level}`} title={t(g.detail, g.params)}>
-              <div className="top"><span>{g.emoji} {t(g.label)}</span><span>{face[g.level]}</span></div>
-              <div className="track"><div style={{ width: `${Math.min(100, Math.max(4, g.value * 100))}%` }} /></div>
+              <div className="top"><span>{t(g.label)}</span><b>{pct(g.value)}</b></div>
+              <div className="track"><div style={{ width: `${Math.min(100, Math.max(3, g.value * 100))}%` }} /></div>
               <small>{t(g.detail, g.params)}</small>
             </div>
           ))}
         </div>
         <div className="g2d-launch">
-          {a.blockers.map((b) => <div key={b} className="g2d-blocker">⛔ {t(b)}</div>)}
-          <button className="r-btn" disabled={!a.canLaunch} onClick={onLaunch}>{t('🚀 Launch!')}</button>
+          {a.blockers.map((b) => <div key={b} className="g2d-blocker">{t(b)}</div>)}
+          {a.canLaunch && overLimit.length > 0 && <div className="g2d-blocker caution">{t('Over the limit: {list}', { list: overLimit.join(', ') })}</div>}
+          <button className="r-btn" disabled={!a.canLaunch} onClick={onLaunch}>{!a.canLaunch ? t('NO-GO') : overLimit.length > 0 ? t('Launch anyway') : t('GO for launch')}</button>
         </div>
       </footer>
     </div>
