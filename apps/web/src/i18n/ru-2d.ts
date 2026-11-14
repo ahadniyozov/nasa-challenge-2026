@@ -1,6 +1,6 @@
-// TEMPORARY Russian for the 2D game. Delete together with ru.ts.
+// TEMPORARY Russian for the 2D game. Delete before the final build.
 export const RU_2D: Record<string, string> = {
-  '🎮 2D game': '🎮 2D-игра', '🛰️ 3D runner': '🛰️ 3D-раннер',
+  '🎮 2D game': '🎮 2D-игра', 'Orbit {n} of {m}': 'Виток {n} из {m}',
   // slots
   Camera: 'Камера', 'Solar panels': 'Солнечные панели', Battery: 'Батарея', Antenna: 'Антенна', Memory: 'Память', 'Debris shield': 'Щит от мусора',
   Thruster: 'Двигатель', Orbit: 'Орбита', Rocket: 'Ракета', 'Ground stations': 'Наземные станции',
@@ -29,7 +29,7 @@ export const RU_2D: Record<string, string> = {
   'Every summer, fires burn the northern forests. We need a satellite that finds them and sends us photos - for 3 years.': 'Каждое лето горят северные леса. Нам нужен спутник, который находит пожары и присылает фото — 3 года подряд.',
   'Mission requirements': 'Требования миссии',
   'Deliver at least {n} fire photos to Earth': 'Доставить на Землю не меньше {n} фото пожаров',
-  'Work for the whole {n}-year mission': 'Проработать все {n} года миссии',
+  'Work for the whole {n}-year mission': 'Проработать весь срок миссии ({n} г.)',
   'Photos sharp enough to see a fire ({m} m or better)': 'Фото достаточно чёткие, чтобы увидеть пожар ({m} м или лучше)',
   'Stay within the $45M budget': 'Уложиться в бюджет $45M',
   'Our engineers already built a cheap test satellite. Fly it first and see what happens!': 'Наши инженеры уже собрали дешёвый пробный спутник. Сначала запусти его и посмотри, что будет!',
@@ -37,7 +37,7 @@ export const RU_2D: Record<string, string> = {
   // report
   'Mission accomplished!': 'Миссия выполнена!', 'The test satellite was not good enough': 'Пробный спутник не справился',
   'Not all requirements were met': 'Не все требования выполнены',
-  'Fire photos delivered: {d} of {n}': 'Доставлено фото пожаров: {d} из {n}', 'Worked for all {n} years': 'Проработал все {n} года',
+  'Fire photos delivered: {d} of {n}': 'Доставлено фото пожаров: {d} из {n}', 'Worked for all {n} years': 'Проработал весь срок миссии ({n} г.)', 'Worked for the whole year': 'Проработал весь год',
   'Fell from orbit early': 'Упал с орбиты раньше срока', 'Destroyed by space junk': 'Разбит космическим мусором',
   'Photos sharp enough': 'Фото достаточно чёткие', 'Photos too blurry': 'Фото слишком размытые', 'Within budget': 'В рамках бюджета',
   'Why - and what to change': 'Почему так — и что поменять', 'Change: {s}': 'Изменить: {s}',
@@ -60,7 +60,6 @@ export const RU_2D: Record<string, string> = {
   // flight
   'fire photos delivered': 'фото пожаров доставлено', 'Year {n} of {m}': 'Год {n} из {m}',
   "🌑 Earth's shadow": '🌑 Тень Земли', '☀️ Sunlight - charging': '☀️ Солнце — зарядка', '📡 Sending photos home!': '📡 Отправляем фото домой!',
-  '← → to change lane. Fly over 🔥 to photograph, then over 📡 to send photos home!': '← → — сменить полосу. Пролетай над 🔥, чтобы снять, а потом над 📡, чтобы отправить фото домой!',
   '🔥 The air pulled the satellite down - it burned up': '🔥 Воздух стащил спутник вниз — он сгорел',
   '🪫 Battery empty - satellite asleep': '🪫 Батарея села — спутник уснул', '🌑 Too dark for this camera': '🌑 Этой камере слишком темно',
   '😴 Camera asleep': '😴 Камера спит', '💾 Memory full! Find a station': '💾 Память полна! Ищи станцию',

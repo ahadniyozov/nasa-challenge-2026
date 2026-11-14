@@ -128,7 +128,12 @@ export function FlightHud({ p, m, hud, control }: { p: FlightParams; m: Mission;
         {hud.storm > 0 && <div className="r-chip storm">{hud.storm === 1 ? t('⚠️ Solar storm coming') : t('☀️ Solar storm!')}</div>}
       </div>
       {hud.flash && <div className="r-flash">{hud.flash}</div>}
-      {hud.t < 5 && <div className="r-tip">{t(TIPS[m.targets.kind])}{p.storms > 0 ? ' ' + t('SPACE = safe mode during solar storms.') : ''}</div>}
+      {hud.t < 5 && (
+        <div className="r-tip">
+          {TOUCH ? t('Tap the left or right side of the screen to change lane.') : t('← → to change lane.')} {t(TIPS[m.targets.kind])}
+          {p.storms > 0 ? ' ' + (TOUCH ? t('Tap 🛡️ for safe mode during solar storms.') : t('SPACE = safe mode during solar storms.')) : ''}
+        </div>
+      )}
       <div className="g2d-touch">
         <button onPointerDown={() => tap(-1)} aria-label="left">◀</button>
         {p.storms > 0 && <button className={`safe ${hud.safe ? 'on' : ''}`} onPointerDown={() => { control.current.safe = !control.current.safe; }} aria-label="safe mode">🛡️</button>}
@@ -138,11 +143,14 @@ export function FlightHud({ p, m, hud, control }: { p: FlightParams; m: Mission;
   );
 }
 
+/** a phone or tablet: explain taps, not keys */
+const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches;
+
 const TIPS: Record<TargetKind, string> = {
-  star: '← → to change lane. Fly over ✦ to take a photo, then over 📡 to send it home!',
-  fire: '← → to change lane. Fly over 🔥 to photograph, then over 📡 to send photos home!',
-  ice: '← → to change lane. Fly over glaciers to photograph them, then over 📡 to send photos home!',
-  storm: '← → to change lane. Fly over 🌀 hurricanes to image them and send the images home!',
-  particle: '← → to change lane. Fly through particle clouds to measure them, then over 📡 to send data home!',
-  city: '← → to change lane. Fly over cities to photograph them, then over 📡 to send photos home!',
+  star: 'Fly over ✦ to take a photo, then over 📡 to send it home!',
+  fire: 'Fly over 🔥 to photograph, then over 📡 to send photos home!',
+  ice: 'Fly over glaciers to photograph them, then over 📡 to send photos home!',
+  storm: 'Fly over 🌀 hurricanes to image them and send the images home!',
+  particle: 'Fly through particle clouds to measure them, then over 📡 to send data home!',
+  city: 'Fly over cities to photograph them, then over 📡 to send photos home!',
 };

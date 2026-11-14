@@ -14,12 +14,12 @@
 
 ```bash
 npm install
-npm run dev               # http://localhost:5173 (главный режим — 2D-игра)
+npm run dev               # http://localhost:5173 (игра с 3D-полётом; ?2d — 2D-полёт)
 npm run typecheck         # engine + web + server
 npm test                  # vitest: движок + apps/web (sim.test.ts)
 npm run check:missions    # баланс: у каждой миссии есть решение, стартовый спутник её не решает
 npm run build
-node scripts/bot-2d.mjs [http://localhost:5199/?all] [missionId]   # бот играет миссии в браузере (нужен запущенный dev-сервер и playwright)
+node scripts/bot-2d.mjs [http://localhost:5199/?all] [missionId]   # бот играет миссии в браузере в 3D (?all&2d — в 2D); нужны dev-сервер и playwright
 ```
 
 Перед любым PR должны проходить: `typecheck`, `test`, `check:missions`, `build` (то же проверяет CI в `.github/workflows/ci.yml`).
@@ -31,9 +31,9 @@ packages/engine/src/       чистый TS, без DOM
   physics.ts               период, доля тени, пролёты над станциями, время жизни орбиты из-за сопротивления, связь
   catalog.ts               орбиты, ракеты, платформы, детали, станции; SCENARIOS (старые режимы) + GAME_SCENARIOS (2D-миссии)
   budgets.ts               computeBudgets(design) → масса, энергия, данные, цена, срок, наука, coversTarget
-  validate.ts, simulate.ts, score.ts   используются старым «инженерным» режимом
+  validate.ts, simulate.ts, score.ts, presets.ts   используются только сервером (apps/server) и тестами движка
 apps/web/src/
-  main.tsx                 выбор режима: по умолчанию game2d; ?runner3d, ?simple, ?expert — старые режимы
+  main.tsx                 один режим — игра с миссиями; полёт 3D по умолчанию, ?2d или нет WebGL — 2D (сбой 3D тоже откатывается на 2D)
   game2d/                  ← ОСНОВНАЯ ИГРА
     missions.ts            MISSIONS (6 штук), INSTRUMENT_INFO, у каждой миссии: заказчик, требования, допустимые слоты, start/test-спутник
     config.ts              SLOTS, Build, slotsFor(m), toDesign(build, m), analyse(build, m) → Analysis { budgets, blockers, flight: FlightParams, gauges }
@@ -46,9 +46,18 @@ apps/web/src/
     Launch2D.tsx           анимация запуска на canvas (ракета зависит от build.rocket)
     SatelliteArt.tsx       SVG спутника на экране сборки
     missions.check.ts      статическая проверка баланса
-    game2d.css             стили (поверх токенов --r-* из runner/runner.css)
-  i18n/                    useT() → { t, name, blurb, msg }; ключи — английский текст; ru*.ts — ВРЕМЕННЫЙ русский (по умолчанию RU, в финале — EN)
-  runner/, kid/, scenes/, ui/, App.tsx   старые режимы (3D-раннер, простой, инженерный); scenes/* — основа для будущего 3D
+    theme.css              тема игры: токены --r-*, верхняя панель, HUD, кнопки (общая для game2d, game3d, content)
+    game2d.css             стили экранов игры (поверх theme.css)
+  game3d/
+    Flight3D.tsx           3D-полёт на sim.ts (ленивая загрузка): useFrame → stepSim, камера, свет, оверлеи; HUD из FlightHud
+    flight/track.ts        геометрия: ahead (с) → точка на дуге трассы, полосы, Солнце по фазе орбиты (тень = SimState.shadow)
+    flight/Earth.tsx       глобус (Blue/Black Marble), терминатор, атмосфера, наклон трассы под широту миссии
+    flight/Targets.tsx     6 видов целей, пул мешей; World.tsx — полосы, мусор (InstancedMesh), станции, пакеты, буря
+    flight/FlightSatellite.tsx  спутник в полёте + SatelliteStandIn (заменить на SatelliteModel разработчика 2)
+    audio.ts               звук (разработчик 3)
+  content/                 карточки «В реальности» и экран NASA Resources (разработчик 3)
+  i18n/                    useT() → { t }; ключи — английский текст; ru-*.ts — ВРЕМЕННЫЙ русский (по умолчанию EN)
+  i18n/LangToggle.tsx      переключатель RU/EN (временный)
 apps/server/               socket.io: комнаты и лидерборд (пока не подключены к 2D)
 deploy/                    Docker + Caddy
 ```
@@ -96,7 +105,7 @@ deploy/                    Docker + Caddy
 - Тексты интерфейса — только `t('English text')`; русский перевод в `src/i18n/ru-2d.ts` / `ru-missions.ts`. Шаблоны: `t('Year {n} of {m}', { n, m })`.
 - На canvas не рисовать эмодзи: в части браузеров их нет, поэтому цели и станции рисуются фигурами (`drawTarget` в `Flight2D.tsx`).
 - `localStorage` — только в try/catch (в приватном режиме бросает исключение).
-- Хуки для бота: `window.__g2d` (SimState), `window.__simBot(state, useSafe)` (тот же бот, что в тестах), `window.__g2dMove(±1)`, `window.__g2dSafe(on)`, `window.__g2dPlay(missionId, buildPatch, isTest)`. Для 3D добавить такие же `__g3d*`.
+- Хуки для бота: `window.__g2d` / `window.__g3d` (SimState), `__g3dMove`, `__g3dSafe`, `window.__simBot(state, useSafe)` (тот же бот, что в тестах), `window.__g2dMove(±1)`, `window.__g2dSafe(on)`, `window.__g2dPlay(missionId, buildPatch, isTest)`. Для 3D добавить такие же `__g3d*`.
 - Ассеты: свои модели из примитивов или CC0 с указанием источника. Без логотипов NASA и фото людей. Текстуры Земли — NASA Blue/Black Marble в `public/textures/`.
 - Телефон обязателен: портрет, касания, без горизонтальной прокрутки, ≥ 30 fps.
 
