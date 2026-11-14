@@ -4,7 +4,7 @@
 .g2d-flight .mini-track div { height: 100%; background: var(--r-accent); }
 .g2d-touch { position: absolute; inset: 64px 0 56px 0; display: flex; flex-direction: row; z-index: 4; }
 .g2d-touch button { flex: 1; background: transparent; border: 0; color: transparent; font-size: 38px; cursor: pointer; }
-@media (hover: none) { .g2d-touch button { color: #ffffff22; } }
+@media (hover: none) { .g2d-touch button { color: #ffffff70; text-shadow: 0 0 10px #000a; } }
 
 .g2d-page { flex: 1; overflow-y: auto; display: grid; place-items: center; padding: 18px 14px; background: radial-gradient(ellipse at top, #1b2470, #050a1f 65%); }
 .g2d-card { width: min(680px, 100%); background: var(--r-card); border: 2px solid var(--r-line); border-radius: 24px; padding: 24px; }
@@ -115,3 +115,8 @@
 @keyframes g2d-pop { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (max-width: 520px) { .g2d-countdown { font-size: 24px; } .g2d-countdown.big { font-size: 90px; } }
 .g2d-flight .r-tip { top: 128px; bottom: auto; }
+/* phones: the HUD wraps to several rows, so the tip goes to the bottom and keeps the orbit strip visible */
+@media (max-width: 700px) { .g2d-flight .r-tip { top: auto; bottom: 96px; } }
+
+.g2d-lesson .g2d-later { color: var(--r-dim); font-size: 13px; white-space: nowrap; }
+@media (max-width: 520px) { .g2d-lesson .g2d-later { white-space: normal; } }

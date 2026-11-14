@@ -1,4 +1,4 @@
-// TEMPORARY Russian for the "In real life" cards, NASA Resources screen and sound button. Delete together with ru.ts.
+// TEMPORARY Russian for the "In real life" cards, NASA Resources screen and sound button. Delete before the final build.
 export const RU_CONTENT: Record<string, string> = {
   // sound
   'Sound on': 'Звук включён', 'Sound off': 'Звук выключен',

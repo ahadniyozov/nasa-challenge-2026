@@ -1,4 +1,4 @@
-/* "In real life" cards and the NASA Resources screen. Uses the --r-* tokens from runner/runner.css. */
+/* "In real life" cards and the NASA Resources screen. Uses the --r-* tokens from game2d/theme.css. */
 .c-link { color: var(--r-accent); text-decoration: none; font-weight: 700; }
 .c-link:hover, .c-link:focus-visible { text-decoration: underline; }
 

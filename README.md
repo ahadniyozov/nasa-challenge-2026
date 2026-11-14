@@ -5,31 +5,9 @@
 Design, launch and operate a space mission as a team. Every choice costs mass, power, money, data or time,
 and when a mission fails, the game explains *why*.
 
-## Orbital Runner (main game)
+## The game
 
-The satellite flies its orbit like a runner character: dodge space junk in 3 lanes, fly over ⭐ targets in daylight to take photos, and fly over 📡 ground stations to send them home - only delivered photos count. One orbit = 30 s; the share of each orbit spent in Earth's shadow comes from the real geometry (≈36% at 550 km), and the battery drains there. A solar storm demands safe mode. Next: a garage with upgrades between runs (battery, panels, antenna, memory, shield) - each one a real engineering trade-off.
-
-## Other modes
-
-- **Simple mode** (default, ages 10+): one question per screen with 3 big choices, five smiley meters (weight, energy, money, photos home, lifetime), a crew of four advisors who explain every problem in plain words and jump you to the step that fixes it. The flight is a mini-game: tap targets inside the camera's green circle, photos fly home only over ground stations, the battery drains in Earth's shadow, and real engine events (solar storms, failures, debris) interrupt you. 1-3 stars per mission.
-- **Engineer mode** (`🔧` in the top bar, or `?expert`): the full mission-design console described below.
-
-Both modes use the same engine. Simple-mode choices map to real catalog components, and a test checks that the crew's "must fix" advice matches the engine's launch errors for every combination.
-
-## Game loop (engineer mode)
-
-1. **Brief**: pick a customer scenario (first CubeSat, wildfire watch, sandbox).
-2. **Design**: four roles split the decisions:
-   - **Flight Director**: bus, launcher, cash reserve
-   - **Spacecraft Engineer**: power, battery, computer, attitude control, propulsion
-   - **Science Lead**: instruments
-   - **Ops & Comms**: orbit, radio band, ground stations
-
-   Live budgets, a design review that explains each error, and a 400-run Monte Carlo risk analysis support the decisions.
-3. **Go / No-Go poll**: every role must vote GO before launch.
-4. **Launch**: 3D launch sequence. Rockets can fail.
-5. **Operations**: the mission runs at accelerated time over a 3D Earth, showing Earth's shadow, ground-station contacts, solar storms, debris and failures.
-6. **Report**: grade, score breakdown, "why it went this way", and a share link.
+A customer orders a mission (find wildfires, watch polar ice, track hurricanes...). You build a satellite from parts, choose its orbit, rocket and ground stations, launch it and fly it over a 3D Earth: change lanes to fly over targets, dodge space junk, survive Earth's shadow and solar storms, and pass over ground stations to send the data home. Every number in the flight comes from the engine's budgets for your design. At the end the report checks each requirement and explains which part to change. Six missions from easy to hard; `?2d` plays the flight in 2D.
 
 ## Repository layout
 
@@ -42,8 +20,9 @@ packages/engine   Pure TypeScript mission model, shared by client and server
   src/simulate.ts   seeded month-by-month operations + Monte Carlo
   src/score.ts      score, grade, lessons learned
 apps/web          React + react-three-fiber client
-  src/kid/          simple mode: steps, crew advice, flight mini-game
-  src/scenes/       Hangar, Orbit and Launch 3D scenes
+  src/game2d/       the game: missions, satellite builder, flight rules (sim.ts), 2D flight, report
+  src/game3d/       3D flight over the globe, sound
+  src/content/      "In real life" cards and the NASA Resources screen
 apps/server       Socket.io rooms for up to 4 players + authoritative leaderboard
 deploy            Dockerfile, docker-compose, Caddy (automatic HTTPS)
 ```
@@ -59,10 +38,10 @@ npm test             # engine unit tests
 npm run dev:server   # optional: multiplayer server on :8787
 ```
 
-Two URL tricks help with demos:
+Two URL options help with demos:
 
-- `?seed=5` makes the mission's random events reproducible.
-- A `#d=...` link (made with the "Share design" button) opens a saved design.
+- `?all` opens every mission.
+- `?2d` uses the 2D flight instead of the 3D one.
 
 ## Deploy (VPS + domain)
 
@@ -102,11 +81,10 @@ Earth textures are NASA Blue Marble / Black Marble (public domain).
 ## Для команды
 
 - **Движок** (`packages/engine`): формулы, баланс, сценарии, тесты. Любую цифру в игре меняем в `catalog.ts`.
-- **Простой режим** (`apps/web/src/kid`): шаги, советы команды, мини-игра полёта — главный экран игры.
-- **UI инженера** (`apps/web/src/ui`): панели, проверка, отчёт.
-- **3D** (`apps/web/src/scenes`): ангар, орбита, запуск.
+- **Игра** (`apps/web/src/game2d`): миссии, сборка, правила полёта (`sim.ts`), отчёт.
+- **3D** (`apps/web/src/game3d`): 3D-полёт над глобусом, звук.
 - **Сервер и деплой** (`apps/server`, `deploy`).
 
 Правило: игровая логика живёт только в `engine`, а клиент и сервер её только вызывают.
 
-**Русский язык — временный.** Весь перевод лежит в `apps/web/src/i18n/`, переключатель RU/EN — справа в верхней панели. Новые строки в UI оборачивайте в `t('English text')` и добавляйте перевод в `ru.ts`. Перед сабмитом: удалить `ru.ts`, `ru-kid.ts` и `LangToggle` в `App.tsx`, а в `i18n/index.ts` оставить только английскую ветку.
+**Русский язык — временный.** Весь перевод лежит в `apps/web/src/i18n/`, переключатель RU/EN — справа в верхней панели. Новые строки в UI оборачивайте в `t('English text')` и добавляйте перевод в `ru-*.ts`. Перед сабмитом: удалить `ru*.ts` и `i18n/LangToggle.tsx`, а в `i18n/index.ts` оставить только английскую ветку.
