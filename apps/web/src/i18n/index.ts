@@ -8,8 +8,9 @@ import { RU_BLURBS, RU_MSG, RU_NAMES, RU_RULES, RU_UI as RU_BASE } from './ru';
 import { RU_KID } from './ru-kid';
 import { RU_RUNNER } from './ru-runner';
 import { RU_2D } from './ru-2d';
+import { RU_MISSIONS } from './ru-missions';
 
-const RU_UI: Record<string, string> = { ...RU_BASE, ...RU_KID, ...RU_RUNNER, ...RU_2D };
+const RU_UI: Record<string, string> = { ...RU_BASE, ...RU_KID, ...RU_RUNNER, ...RU_2D, ...RU_MISSIONS };
 
 export type Lang = 'en' | 'ru';
 

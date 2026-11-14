@@ -76,3 +76,32 @@
   .g2d-card h1 { font-size: 22px; }
   .g2d-lesson { flex-direction: column; align-items: stretch; }
 }
+
+/* career map */
+.g2d-career { width: min(1040px, 100%); }
+.g2d-career h1 { text-align: center; margin: 4px 0 6px; font-size: 30px; }
+.g2d-note.center { text-align: center; }
+.g2d-missions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+.g2d-mcard { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; background: var(--r-card); border: 2px solid var(--r-line); border-radius: 20px; padding: 16px 14px 12px; color: var(--r-text); cursor: pointer; font-size: 16px; transition: transform .15s, border-color .15s; }
+.g2d-mcard:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--r-accent); }
+.g2d-mcard .num { position: absolute; top: 10px; left: 14px; font-weight: 900; color: var(--r-dim); }
+.g2d-mcard .emoji { font-size: 46px; line-height: 1.1; }
+.g2d-mcard .lvl { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border-radius: 8px; background: #1b2463; }
+.g2d-mcard.lvl-cadet .lvl { color: var(--r-good); }
+.g2d-mcard.lvl-engineer .lvl { color: var(--r-warn); }
+.g2d-mcard.lvl-flight .lvl { color: var(--r-bad); }
+.g2d-mcard small { color: var(--r-dim); font-size: 13px; line-height: 1.35; }
+.g2d-mcard .mstars { font-size: 24px; letter-spacing: 4px; margin-top: auto; }
+.g2d-mcard .mstars span { color: #2c3470; }
+.g2d-mcard .mstars span.on { color: #ffd43b; }
+.g2d-mcard.locked { opacity: .45; cursor: not-allowed; }
+.g2d-ghost.small { font-size: 14px; padding: 8px 14px; }
+.g2d-tag { color: var(--r-dim); font-size: 13px; margin-bottom: 10px; }
+.r-chip.storm { color: #ffb347; border-color: #ffb347; animation: r-pulse .5s infinite alternate; }
+.g2d-touch button.safe { flex: 0 0 64px; color: #ffd23f; font-size: 30px; }
+.g2d-touch button.safe.on { background: #ffd23f22; }
+@media (max-width: 860px) { .g2d-missions { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .g2d-missions { grid-template-columns: 1fr; } .g2d-mcard small { display: none; } }
+.g2d-touch button.safe { position: absolute; right: 16px; bottom: 12px; width: 68px; height: 68px; flex: none; border-radius: 50%; background: #0b1440cc; border: 3px solid #ffd23f; color: #ffd23f; font-size: 30px; }
+.g2d-touch button.safe.on { background: #ffd23f; color: #0b1440; box-shadow: 0 0 22px #ffd23f; }
+.g2d-opt b { font-size: 14px; overflow-wrap: anywhere; hyphens: auto; }

@@ -1,8 +1,9 @@
 // 2D mission: the player's build maps onto real engine components; the engine's budgets
 // then set every flight parameter (shadow length, battery, downlink, lifetime, mass).
 import { BUSES, componentById, computeBudgets, physics, type Budgets, type MissionDesign } from '@mission/engine';
+import { INSTRUMENT_INFO, MISSIONS, type Mission } from './missions';
 
-export type SlotId = 'camera' | 'panels' | 'battery' | 'antenna' | 'memory' | 'orbit' | 'rocket' | 'stations' | 'shield' | 'thruster';
+export type SlotId = 'camera' | 'body' | 'panels' | 'battery' | 'antenna' | 'memory' | 'orbit' | 'rocket' | 'stations' | 'shield' | 'thruster' | 'computer';
 
 export interface Choice { id: string; emoji: string; title: string; text: string }
 export interface Slot { id: SlotId; emoji: string; title: string; group: 'satellite' | 'mission'; options: Choice[] }
@@ -12,6 +13,10 @@ export const SLOTS: Slot[] = [
     { id: 'cam-cubesat', emoji: '📷', title: 'Simple camera', text: 'Colour photos, only in daylight. Tiny.' },
     { id: 'cam-thermal', emoji: '🌡️', title: 'Heat camera', text: 'Sees fires day and night. Needs more power.' },
     { id: 'cam-hires', emoji: '🔭', title: 'Telescope', text: 'Super sharp, 25 kg, huge files.' },
+  ] },
+  { id: 'body', emoji: '📦', title: 'Body', group: 'satellite', options: [
+    { id: 'auto', emoji: '📦', title: 'Smallest that fits', text: 'Light and cheap. A CubeSat wears out in 3-4 years.' },
+    { id: 'smallsat', emoji: '🧳', title: 'Sturdy 150 kg body', text: 'Heavier and $12M, but lasts 7 years.' },
   ] },
   { id: 'panels', emoji: '☀️', title: 'Solar panels', group: 'satellite', options: [
     { id: 'solar-body', emoji: '▫️', title: 'On the body', text: 'Light, little power.' },
@@ -41,6 +46,10 @@ export const SLOTS: Slot[] = [
     { id: 'none', emoji: '➖', title: 'None', text: '' },
     { id: 'prop-cold', emoji: '💨', title: 'Small thruster', text: 'Fights air drag - longer life in low orbit.' },
   ] },
+  { id: 'computer', emoji: '🧠', title: 'Computer', group: 'satellite', options: [
+    { id: 'obc-cots', emoji: '💻', title: 'Normal computer', text: 'Cheap. A solar storm can crash it.' },
+    { id: 'obc-rad', emoji: '🛡️', title: 'Radiation-hardened', text: 'Survives solar storms. +$0.8M, more power.' },
+  ] },
   { id: 'orbit', emoji: '🌍', title: 'Orbit', group: 'mission', options: [
     { id: 'leo-400', emoji: '🏠', title: 'Low 400 km', text: 'Sharp, cheap, but air pulls you down in ~1 year.' },
     { id: 'sso-550', emoji: '🧭', title: 'Polar 550 km', text: 'Flies over the whole Earth, lasts ~10 years.' },
@@ -60,37 +69,44 @@ export const SLOTS: Slot[] = [
 
 export type Build = Record<SlotId, string>;
 
-export const TEST_SATELLITE: Build = {
-  camera: 'cam-cubesat', panels: 'solar-body', battery: 'batt-s', antenna: 's-band', memory: 'm4',
-  shield: 'none', thruster: 'none', orbit: 'leo-400', rocket: 'rideshare', stations: 'st1',
-};
-
-export const MISSION = {
-  scenarioId: 'wildfire',
-  goalPhotos: 10,
-  years: 3,
-  maxResolutionM: 60,
-};
+/** The slots of one mission: the instrument slot lists that mission's instruments; easy missions lock most slots. */
+export function slotsFor(m: Mission): Slot[] {
+  const sensors = m.instruments.every((id) => INSTRUMENT_INFO[id].photoMb < 1);
+  return SLOTS.map((s) =>
+    s.id !== 'camera' ? s : {
+      ...s, emoji: sensors ? '🔬' : '📷', title: sensors ? 'Sensor' : 'Camera',
+      options: m.instruments.map((id) => ({ id, emoji: INSTRUMENT_INFO[id].emoji, title: INSTRUMENT_INFO[id].title, text: INSTRUMENT_INFO[id].text })),
+    },
+  ).filter((s) => m.slots.includes(s.id));
+}
 
 const STATIONS: Record<string, string[]> = { st1: ['krasnoyarsk'], st2: ['krasnoyarsk', 'svalbard'], st3: ['krasnoyarsk', 'svalbard', 'alaska'] };
 const MEMORY: Record<string, { slots: number; cost: number }> = { m4: { slots: 4, cost: 0 }, m8: { slots: 8, cost: 0.2 }, m12: { slots: 12, cost: 0.5 } };
 
 /** Smallest bus that fits all parts - bigger parts make the satellite bigger, heavier and pricier. */
-function fitBus(parts: string[]) {
+function fitBus(parts: string[], min: string) {
   const kg = parts.reduce((s, id) => s + (componentById.get(id)?.massKg ?? 0), 0);
   const slots = parts.reduce((s, id) => s + (componentById.get(id)?.slots ?? 0), 0);
-  return BUSES.find((b) => kg <= b.maxPayloadKg && slots <= b.slots) ?? BUSES.at(-1)!;
+  const from = Math.max(0, BUSES.findIndex((b) => b.id === min));
+  return BUSES.slice(from).find((b) => kg <= b.maxPayloadKg && slots <= b.slots) ?? BUSES.at(-1)!;
 }
 
-export function toDesign(b: Build): MissionDesign {
-  const parts = [b.panels, b.battery, b.antenna, 'obc-cots', 'adcs-rw', b.camera, ...(b.thruster === 'prop-cold' ? ['prop-cold'] : [])];
-  return { scenarioId: MISSION.scenarioId, busId: fitBus(parts).id, orbitId: b.orbit, launcherId: b.rocket, components: parts, groundStationIds: STATIONS[b.stations], reservePct: 0.1 };
+export function toDesign(b: Build, m: Mission): MissionDesign {
+  const parts = [b.panels, b.battery, b.antenna, b.computer, 'adcs-rw', b.camera, ...(b.thruster === 'prop-cold' ? ['prop-cold'] : [])];
+  const bus = fitBus(parts, b.body === 'smallsat' ? 'smallsat' : 'cubesat-3u');
+  return { scenarioId: m.scenarioId, busId: bus.id, orbitId: b.orbit, launcherId: b.rocket, components: parts, groundStationIds: STATIONS[b.stations], reservePct: 0.1 };
 }
 
 export interface FlightParams {
   orbitSec: number;
   orbits: number; // planned
-  orbitsBeforeDecay: number; // how many the satellite survives (air drag)
+  orbitsBeforeDecay: number; // how many the satellite survives (air drag or wear)
+  endReason: 'decay' | 'wearout';
+  reachesTargets: boolean; // the orbit flies over the target latitudes
+  targetRate: number; // how often targets pass under the track
+  storms: number;
+  radHard: boolean;
+  goal: number;
   shadowFraction: number;
   shadowDrain: number; // battery %/s in shadow
   sunCharge: number; // battery %/s in sunlight
@@ -120,8 +136,8 @@ export interface Analysis {
 
 const lvl = (r: number) => (r <= 0.85 ? 'good' : r <= 1 ? 'warn' : 'bad') as 'good' | 'warn' | 'bad';
 
-export function analyse(build: Build): Analysis {
-  const design = toDesign(build);
+export function analyse(build: Build, m: Mission = MISSIONS[1]): Analysis {
+  const design = toDesign(build, m);
   const b = computeBudgets(design);
   const mem = MEMORY[build.memory];
   const shield = build.shield === 'shield';
@@ -129,7 +145,7 @@ export function analyse(build: Build): Analysis {
   const massKg = b.mass.totalKg + (shield ? 2 : 0);
   const withMargin = massKg * 1.2;
   const totalCostM = b.cost.totalM + extraCostM;
-  const budgetM = b.scenario.budgetM;
+  const budgetM = m.budgetM;
 
   const blockers: string[] = [];
   if (b.mass.launcherCapacityKg <= 0) blockers.push('This rocket cannot reach that orbit.');
@@ -145,7 +161,8 @@ export function analyse(build: Build): Analysis {
   const genRatio = b.power.averageLoadW > 0 ? Math.min(1.5, b.power.endOfLifeAverageW / b.power.averageLoadW) : 1;
   const comms = b.parts.filter((p) => p.category === 'comms') as { downlinkMbps: number }[];
   const linkMbps = Math.max(0, ...comms.map((c) => c.downlinkMbps)) * physics.linkDistanceFactor(b.orbit.altitudeKm);
-  const photoMb = build.camera === 'cam-hires' ? 60 : build.camera === 'cam-thermal' ? 8 : 5;
+  const info = INSTRUMENT_INFO[build.camera];
+  const photoMb = info.photoMb;
   const passesPerDay = b.data.perStation.reduce((s, st) => s + st.passes, 0);
   // one game orbit stands for many real ones, so passes are scaled up (but a station the orbit never sees stays at 0)
   const realPerOrbit = passesPerDay / b.orbitInfo.orbitsPerDay;
@@ -153,8 +170,15 @@ export function analyse(build: Build): Analysis {
 
   const flight: FlightParams = {
     orbitSec,
-    orbits: MISSION.years,
-    orbitsBeforeDecay: Math.max(1, Math.min(MISSION.years, Math.floor(b.lifetime.expectedYears))),
+    orbits: m.laps ?? m.years,
+    orbitsBeforeDecay: b.lifetime.expectedYears >= m.years - 0.01 ? (m.laps ?? m.years) : Math.max(1, Math.floor((b.lifetime.expectedYears / m.years) * (m.laps ?? m.years))),
+    endReason: b.lifetime.orbitYears + b.lifetime.propulsionExtraYears <= b.lifetime.expectedYears + 0.01 ? 'decay' : 'wearout',
+    reachesTargets: !m.farNorth || b.science.coversTarget,
+    // a weather satellite in low orbit only passes over the hurricanes now and then
+    targetRate: m.needsContact && !geo ? 0.35 : 1,
+    storms: m.storms,
+    radHard: build.computer === 'obc-rad',
+    goal: m.goal,
     shadowFraction,
     shadowDrain: (100 * Math.min(batteryRatio, 4) * 1.05) / Math.max(shadowSec, 1),
     // panels weaker than the load → the battery barely recharges
@@ -164,10 +188,10 @@ export function analyse(build: Build): Analysis {
     alwaysInContact: geo && b.data.contactMinPerDay > 0,
     memory: mem.slots,
     hearts: 3 + (shield ? 1 : 0),
-    laneSpeed: Math.max(0.45, Math.min(1.25, 1.35 - massKg / 140)),
+    laneSpeed: Math.max(0.6, Math.min(1.25, 1.35 - massKg / 140)),
     debrisRate: b.orbit.kind === 'LEO' ? 1.3 : geo ? 0.35 : 1,
-    nightVision: b.science.tagsCovered.includes('thermal'),
-    sharp: (b.science.bestResolutionM ?? 999) <= MISSION.maxResolutionM,
+    nightVision: info.nightVision,
+    sharp: m.maxResolutionM === undefined || (b.science.bestResolutionM ?? 999) <= m.maxResolutionM,
     massKg,
   };
 

@@ -9,6 +9,7 @@
     "dev:server": "npm run dev -w @mission/server",
     "build": "npm run build -w @mission/web",
     "test": "npm test -w @mission/engine",
+    "check:missions": "npx tsx apps/web/src/game2d/missions.check.ts",
     "typecheck": "tsc -p packages/engine && tsc -p apps/web --noEmit && tsc -p apps/server --noEmit"
   }
 }

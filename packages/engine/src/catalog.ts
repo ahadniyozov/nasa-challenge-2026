@@ -132,10 +132,24 @@ export const SCENARIOS: Scenario[] = [
     requirements: { minScience: 0 } },
 ];
 
+/** Scenarios for the 2D game's missions (kept out of SCENARIOS so other modes don't list them). */
+export const GAME_SCENARIOS: Scenario[] = [
+  { id: 'g-first', title: 'First photo from space', difficulty: 'tutorial', brief: '', budgetM: 8, durationYears: 1,
+    allowedOrbits: ORBITS.map((o) => o.id), allowedBuses: BUSES.map((b) => b.id), requirements: { minScience: 0 } },
+  { id: 'g-ice', title: 'Polar ice', difficulty: 'normal', brief: '', budgetM: 40, durationYears: 5,
+    allowedOrbits: ORBITS.map((o) => o.id), allowedBuses: BUSES.map((b) => b.id), requirements: { minScience: 0, targetLatDeg: 75 } },
+  { id: 'g-weather', title: 'Hurricane watch', difficulty: 'normal', brief: '', budgetM: 250, durationYears: 5,
+    allowedOrbits: ORBITS.map((o) => o.id), allowedBuses: BUSES.map((b) => b.id), requirements: { minScience: 0 } },
+  { id: 'g-spaceweather', title: 'Space weather', difficulty: 'hard', brief: '', budgetM: 12, durationYears: 3,
+    allowedOrbits: ORBITS.map((o) => o.id), allowedBuses: BUSES.map((b) => b.id), requirements: { minScience: 0 } },
+  { id: 'g-mapping', title: 'Detailed map', difficulty: 'hard', brief: '', budgetM: 42, durationYears: 5,
+    allowedOrbits: ORBITS.map((o) => o.id), allowedBuses: BUSES.map((b) => b.id), requirements: { minScience: 0 } },
+];
+
 const byId = <T extends { id: string }>(list: T[]) => new Map(list.map((x) => [x.id, x] as const));
 export const orbitById = byId(ORBITS);
 export const launcherById = byId(LAUNCHERS);
 export const busById = byId(BUSES);
 export const componentById = byId(COMPONENTS);
 export const stationById = byId(GROUND_STATIONS);
-export const scenarioById = byId(SCENARIOS);
+export const scenarioById = byId([...SCENARIOS, ...GAME_SCENARIOS]);
