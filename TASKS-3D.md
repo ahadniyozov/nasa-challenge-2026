@@ -21,7 +21,7 @@ apps/web/                  Vite + React 19 + @react-three/fiber 9 + drei 10 + th
     Launch2D.tsx           анимация запуска (canvas)
     SatelliteArt.tsx       SVG-картинка спутника в сборке
     missions.check.ts      проверка баланса: npm run check:missions
-  src/scenes/              старые 3D-сцены (Hangar, Launch, Orbit, Spacecraft): брать как основу, переписывать можно
+  (старые 3D-сцены Hangar, Launch, Orbit, Spacecraft удалены вместе со старыми режимами; посмотреть: git show fd5d857:apps/web/src/scenes/Spacecraft.tsx)
   src/i18n/                перевод: useT() → t('English key'); русский временный, по умолчанию будет английский
   public/textures/         earth-day.webp, earth-night.webp (NASA Blue Marble / Black Marble)
 scripts/bot-2d.mjs         бот проходит все миссии в браузере (playwright)
@@ -149,7 +149,7 @@ function stepSim(s: SimState, dt: number, input: SimInput): void;   // мути�
 
 ## Разработчик 2 — 3D-спутник, сборка, запуск, карьера
 
-**Ты отвечаешь за:** всё 3D вне полёта. Твои файлы: `apps/web/src/game3d/SatelliteModel.tsx`, `Hangar3D.tsx`, `Launch3D.tsx`, `Career3D.tsx` (новые). Можно брать куски из `src/scenes/*` (старые HangarScene, LaunchScene, Spacecraft).
+**Ты отвечаешь за:** всё 3D вне полёта. Твои файлы: `apps/web/src/game3d/SatelliteModel.tsx`, `Hangar3D.tsx`, `Launch3D.tsx`, `Career3D.tsx` (новые). Старые сцены удалены из кода, но их можно взять из истории git: `git show fd5d857:apps/web/src/scenes/Spacecraft.tsx` (а также `HangarScene.tsx`, `LaunchScene.tsx`, `OrbitScene.tsx`).
 
 **Начни с `SatelliteModel.tsx`** — она нужна разработчику 1 для полёта, отдай первую версию в конце дня 1.
 
@@ -171,7 +171,7 @@ function stepSim(s: SimState, dt: number, input: SimInput): void;   // мути�
    - **в подписи** — высота орбиты из `build.orbit`;
    - **пропуск:** клик или клавиша; длительность ≤ 9 с.
 4. **`Career3D.tsx` — карьера.** Глобус, на нём 6 точек миссий в своих местах (пожары — Сибирь/Канада, льды — Гренландия, ураганы — Атлантика, город — любой мегаполис и т.д.). У точки звёзды и замок, наведение показывает карточку миссии, клик ведёт в бриф. Данные — из `MISSIONS` и прогресса (`localStorage` ключ `g2d-progress-v1`, логика уже в `Game2D.tsx`).
-5. **Единый стиль интерфейса:** тёмный «пульт управления», бирюзовые акценты, крупные кнопки. Переменные цветов уже есть в `runner.css` (`--r-*`).
+5. **Единый стиль интерфейса:** тёмный «пульт управления», бирюзовые акценты, крупные кнопки. Переменные цветов уже есть в `game2d/theme.css` (`--r-*`; раньше файл назывался `runner/runner.css`).
 
 
 ### Критерии готовности
