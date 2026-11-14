@@ -30,8 +30,9 @@ export function Flight2D({ p, m, onEnd, seed }: { p: FlightParams; m: Mission; o
   useEffect(() => {
     const cv = canvas.current!;
     const ctx = cv.getContext('2d')!;
-    const day = new Image(); day.src = '/textures/earth-day.webp';
-    const night = new Image(); night.src = '/textures/earth-night.webp';
+    // BASE_URL: the game may live in a sub-folder (GitHub Pages)
+    const day = new Image(); day.src = `${import.meta.env.BASE_URL}textures/earth-day.webp`;
+    const night = new Image(); night.src = `${import.meta.env.BASE_URL}textures/earth-night.webp`;
     const kind = m.targets.kind;
     const [north, south] = m.targets.band;
     const s = createSim(p, m, seed);

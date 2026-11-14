@@ -1,6 +1,54 @@
-# Деплой на свой домен
+# Деплой
 
-Сервер собирает игру в Docker; Caddy отдаёт её по HTTPS (сертификат Let's Encrypt получается сам) и сжимает ответы (zstd/gzip).
+Игра — чистая статика (HTML + JS + текстуры), сервер ей не нужен. Основной способ — **GitHub Pages**, запасной — свой сервер на **Docker + Caddy**.
+
+---
+
+## Основной способ: GitHub Pages
+
+Адрес игры: **https://ahadniyozov.github.io/nasa-challenge-2026/**
+(2D-полёт: `…/nasa-challenge-2026/?2d`, все миссии открыты: `…/?all`).
+
+### Как это работает
+
+`.github/workflows/pages.yml`: на каждый push в `main` (и вручную кнопкой **Run workflow** во вкладке Actions):
+`npm ci` → `npm run build -w @mission/web -- --mode pages` → публикация `apps/web/dist` в Pages.
+
+Сайт живёт не в корне домена, а в папке `/nasa-challenge-2026/`, поэтому:
+- `--mode pages` включает `base: '/nasa-challenge-2026/'` в `apps/web/vite.config.ts`. Обычная сборка, `npm run dev` и Docker остаются в корне `/`.
+- Файлы из `public/` (текстуры и т.п.) в коде загружать **только** через `import.meta.env.BASE_URL`:
+  ```ts
+  `${import.meta.env.BASE_URL}textures/earth-day.webp`   // ✅
+  '/textures/earth-day.webp'                             // ❌ на Pages будет 404
+  ```
+- Если репозиторий переименуют — поменять `PAGES_BASE` в `vite.config.ts`.
+
+### Включить один раз (владелец репозитория)
+
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. Запустить: **Actions → Pages → Run workflow** (или любой push в `main`).
+3. Через 1–2 минуты ссылка появится в Settings → Pages и в шаге `deploy` workflow.
+
+### Проверка после публикации
+
+- [ ] `https://ahadniyozov.github.io/nasa-challenge-2026/` открывается, замок HTTPS (Pages даёт его сам).
+- [ ] 3D-полёт: видна Земля с текстурой (не чёрный шар). В DevTools → Network нет 404, `textures/earth-day.webp` грузится из `/nasa-challenge-2026/textures/`.
+- [ ] `?2d` — 2D-полёт с картой Земли.
+- [ ] Обновить страницу на `?all` — не 404.
+
+### Проверить сборку Pages локально
+
+```bash
+npm run build -w @mission/web -- --mode pages
+cd apps/web && npx vite preview --mode pages
+# открыть http://localhost:4173/nasa-challenge-2026/
+```
+
+---
+
+## Запасной способ: свой сервер (Docker + Caddy)
+
+Сервер собирает игру в Docker; Caddy отдаёт её по HTTPS (сертификат Let's Encrypt получается сам) и сжимает ответы (zstd/gzip). Сборка здесь обычная, от корня домена.
 
 ## Что нужно
 

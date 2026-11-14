@@ -10,11 +10,18 @@ const chunkOf = (id: string) => {
   return undefined;
 };
 
-export default defineConfig({
+// GitHub Pages serves the game from https://<owner>.github.io/nasa-challenge-2026/ :
+// `vite build --mode pages` (see .github/workflows/pages.yml) builds for that sub-path.
+// Every other build (dev server, Docker + Caddy) stays at the site root.
+// Code must load public files via import.meta.env.BASE_URL, never with a leading '/'.
+const PAGES_BASE = '/nasa-challenge-2026/';
+
+export default defineConfig(({ mode }) => ({
+  base: mode === 'pages' ? PAGES_BASE : '/',
   plugins: [react()],
   server: { port: 5173 },
   build: {
     chunkSizeWarningLimit: 1200,
     rollupOptions: { output: { manualChunks: chunkOf } },
   },
-});
+}));

@@ -79,7 +79,8 @@ function orientation(m: Mission, p: FlightParams, geo: boolean) {
 }
 
 export function Earth({ s, tr }: { s: SimState; tr: Track }) {
-  const [day, night] = useLoader(THREE.TextureLoader, ['/textures/earth-day.webp', '/textures/earth-night.webp']);
+  // BASE_URL: the game may live in a sub-folder (GitHub Pages)
+  const [day, night] = useLoader(THREE.TextureLoader, [`${import.meta.env.BASE_URL}textures/earth-day.webp`, `${import.meta.env.BASE_URL}textures/earth-night.webp`]);
   day.colorSpace = night.colorSpace = THREE.SRGBColorSpace;
   day.anisotropy = 4;
   const spin = useRef<THREE.Group>(null);
