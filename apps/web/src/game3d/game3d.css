@@ -1,319 +1,55 @@
-/* 3D screens (Hangar3D, Launch3D, Career3D) — Mission Control theme built on --r-* tokens */
+/* 3D views (tokens in game2d/theme.css): the satellite on the build screen and the globe above the manifest. */
 
-/* ---- Hangar3D ---- */
-.g2d-art.g3d-hangar-art {
-  position: relative;
-  padding: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: 280px;
-}
-
+/* ---- HangarView: fills the drawing area of the build screen's art panel */
 .g3d-hangar-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  cursor: grab;
-  touch-action: none;
-}
-.g3d-hangar-canvas:active {
-  cursor: grabbing;
-}
-
-.g3d-hangar-hud {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 8px 12px 10px;
-  background: linear-gradient(to top, #050a1fee 30%, transparent);
-  pointer-events: none;
-  width: 100%;
-  text-align: center;
-}
-
-.g3d-focus-pill {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  background: #0b1440dd;
-  border: 1.5px solid var(--r-accent);
-  color: var(--r-accent);
-  border-radius: 99px;
-  padding: 4px 14px;
-  font-size: 13px;
-  font-weight: 800;
-  pointer-events: none;
-  white-space: nowrap;
-  box-shadow: 0 0 16px #4dd2ff33;
-}
-
-/* ---- Career3D ---- */
-.g3d-career {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-height: 260px;
+  border-radius: 6px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: radial-gradient(ellipse at 50% 45%, #162266 0%, #050a1f 70%);
-}
-
-.g3d-career-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 1; /* own stacking context: the globe's pins (Html, z-index ≤ 20) stay under the header and dock (z 3) */
-  width: 100%;
-  height: 100%;
+  background: #f7f8f6;
   cursor: grab;
   touch-action: none;
 }
-.g3d-career-canvas:active {
-  cursor: grabbing;
-}
+.g3d-hangar-canvas:active { cursor: grabbing; }
+.g3d-hangar-hint { align-self: stretch; margin: 4px 0 12px; font-size: 13px; color: var(--steel); }
 
-.g3d-career-header {
-  position: relative;
-  z-index: 3;
-  text-align: center;
-  padding: 12px 14px 4px;
-  pointer-events: none;
-  background: linear-gradient(to bottom, #050a1fe6 50%, transparent);
-}
-.g3d-career-header h1 {
-  margin: 0 0 4px;
-  font-size: 28px;
-  text-shadow: 0 2px 12px #000;
-}
-.g3d-career-header p {
-  margin: 0;
-  font-size: 15px;
-  color: var(--r-dim);
-  text-shadow: 0 1px 8px #000;
-}
-.g3d-career-header .g3d-open-btn {
-  pointer-events: auto;
-  margin-top: 8px;
-}
-
-/* 3D Globe Mission Pin (Html overlay) */
-.g3d-pin {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #0d153ded;
-  border: 2px solid var(--r-line);
-  border-radius: 99px;
-  padding: 5px 11px 5px 8px;
-  color: var(--r-text);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 4px 16px #000b;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  user-select: none;
-}
-.g3d-pin:hover:not(:disabled),
-.g3d-pin.active:not(:disabled) {
-  transform: scale(1.1);
-  border-color: var(--r-accent);
-  box-shadow: 0 0 18px #4dd2ff66;
-}
-.g3d-pin.locked {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.g3d-pin .p-num {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #1b2463;
-  color: var(--r-accent);
-  display: inline-grid;
-  place-items: center;
-  font-size: 11px;
-  font-weight: 900;
-}
-.g3d-pin .p-emoji {
-  font-size: 17px;
-  line-height: 1;
-}
-.g3d-pin .p-stars {
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: #2c3470;
-}
-.g3d-pin .p-stars .on {
-  color: #ffd43b;
-}
-
-/* Bottom dock: preview card + 6 mission selector pills */
-.g3d-career-dock {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px 14px;
-  background: linear-gradient(to top, #050a1ff2 65%, transparent);
-  pointer-events: none;
-}
-
-.g3d-preview-card {
-  pointer-events: auto;
-  width: min(520px, 100%);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: var(--r-card);
-  border: 2px solid var(--r-accent);
-  border-radius: 20px;
-  padding: 12px 16px;
-  box-shadow: 0 8px 28px #000c, 0 0 20px #4dd2ff22;
-  backdrop-filter: blur(8px);
-}
-.g3d-preview-card .emoji {
-  font-size: 42px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-.g3d-preview-card .info {
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-}
-.g3d-preview-card .info-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.g3d-preview-card .info-top b {
-  font-size: 17px;
-}
-.g3d-preview-card .lvl {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  padding: 2px 8px;
+/* ---- GlobeHero: dark band above the manifest list */
+.g3d-globe {
+  height: 360px;
+  margin: 0 0 28px;
   border-radius: 8px;
-  background: #1b2463;
-  color: var(--r-accent);
-}
-.g3d-preview-card small {
-  display: block;
-  color: var(--r-dim);
-  font-size: 13px;
-  line-height: 1.35;
-  margin-top: 3px;
-}
-.g3d-preview-card .mstars {
-  font-size: 20px;
-  letter-spacing: 3px;
-  color: #2c3470;
-}
-.g3d-preview-card .mstars .on {
-  color: #ffd43b;
-}
-.g3d-preview-card .r-btn {
-  margin: 0;
-  padding: 10px 20px;
-  font-size: 16px;
-  white-space: nowrap;
-}
-
-.g3d-mission-strip {
-  pointer-events: auto;
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
-  width: min(880px, 100%);
-}
-.g3d-mstrip-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: var(--r-card);
-  border: 2px solid var(--r-line);
-  border-radius: 14px;
-  padding: 8px 6px;
-  color: var(--r-text);
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s;
-}
-.g3d-mstrip-btn:hover:not(:disabled),
-.g3d-mstrip-btn.active:not(:disabled) {
-  transform: translateY(-2px);
-  border-color: var(--r-accent);
-}
-.g3d-mstrip-btn.locked {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.g3d-mstrip-btn .s-top {
-  font-size: 20px;
-  line-height: 1.1;
-}
-.g3d-mstrip-btn .s-title {
-  font-size: 12px;
-  font-weight: 800;
-  max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: radial-gradient(ellipse at 50% 55%, #13243a 0%, var(--space) 70%);
+  cursor: grab;
+  touch-action: none;
 }
-.g3d-mstrip-btn .s-stars {
-  font-size: 13px;
-  letter-spacing: 2px;
-  color: #2c3470;
-}
-.g3d-mstrip-btn .s-stars .on {
-  color: #ffd43b;
-}
+.g3d-globe:active { cursor: grabbing; }
 
-@media (max-width: 860px) {
-  .g2d-art.g3d-hangar-art {
-    height: 33vh;
-    min-height: 220px;
-  }
-  .g3d-career-header h1 {
-    font-size: 22px;
-  }
-  .g3d-career-header p {
-    font-size: 13px;
-  }
-  .g3d-mission-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-  .g3d-preview-card {
-    padding: 10px 12px;
-    gap: 10px;
-  }
-  .g3d-preview-card .emoji {
-    font-size: 32px;
-  }
-  .g3d-preview-card .info-top b {
-    font-size: 15px;
-  }
-  .g3d-preview-card small {
-    display: none;
-  }
-  .g3d-pin .p-title {
-    display: none;
-  }
+.g3d-pin {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--space-panel); color: var(--space-text);
+  border: 1px solid var(--space-line); border-radius: 6px;
+  padding: 4px 10px 4px 4px;
+  font-family: 'Barlow', system-ui, sans-serif; font-size: 14px; font-weight: 600;
+  white-space: nowrap; cursor: pointer; user-select: none;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: border-color .15s ease;
+}
+.g3d-pin:hover:not(:disabled), .g3d-pin.active:not(:disabled) { border-color: var(--orange); }
+.g3d-pin.locked { opacity: .55; cursor: not-allowed; }
+.g3d-pin .p-num {
+  width: 22px; height: 22px; border-radius: 4px; display: inline-grid; place-items: center;
+  background: #e9edf1; color: var(--space); font-family: var(--display); font-size: 15px; font-weight: 700;
+}
+.g3d-pin.locked .p-num { background: #3b4a5c; color: var(--space-dim); }
+.g3d-pin .p-stars { display: inline-flex; gap: 2px; }
+.g3d-pin .p-stars i { width: 6px; height: 6px; border-radius: 1px; border: 1px solid #6b7785; }
+.g3d-pin .p-stars i.on { background: var(--kapton); border-color: var(--kapton); }
+
+@media (max-width: 700px) {
+  .g3d-globe { height: 260px; margin-bottom: 20px; }
+  .g3d-pin { padding: 3px; }
+  .g3d-pin .p-title, .g3d-pin .p-stars { display: none; }
+  .g3d-hangar-canvas { min-height: 240px; }
 }

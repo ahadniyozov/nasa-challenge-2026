@@ -17,6 +17,9 @@ import { SatelliteArt } from './SatelliteArt';
 
 // the 3D flight (and three.js) is loaded only when it is used
 const Flight3D = lazy(() => import('../game3d/Flight3D'));
+const Launch3D = lazy(() => import('../game3d/Launch3D').then((m) => ({ default: m.Launch3D })));
+const HangarView = lazy(() => import('../game3d/Hangar3D').then((m) => ({ default: m.HangarView })));
+const GlobeHero = lazy(() => import('../game3d/Career3D').then((m) => ({ default: m.GlobeHero })));
 
 /** If the 3D flight cannot start (no WebGL context, chunk failed to load), fly the same mission in 2D. */
 class Fallback2D extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -59,6 +62,11 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
     const m = MISSIONS.find((x) => x.id === id)!;
     setMission(m); setBuild({ ...(test ? m.test! : m.start), ...patch } as Build); setIsTest(test); setRunId((n) => n + 1); setPhase('flight');
   };
+  // test hook for the model screenshots (scripts/model-shots): open the build screen of mission X with build Y
+  (window as unknown as Record<string, unknown>).__g2dBuild = (id: string, patch: Partial<Build>, slot: SlotId | null = null) => {
+    const m = MISSIONS.find((x) => x.id === id)!;
+    setMission(m); setBuild({ ...m.start, ...patch } as Build); setFocus(slot); setPhase('build');
+  };
   const fly = (test: boolean) => { setIsTest(test); setRunId((n) => n + 1); setPhase('launch'); };
   const toBuild = (slot: SlotId | null) => { setFocus(slot); setPhase('build'); };
   const pick = (m: Mission) => { setMission(m); setBuild(m.start); setStats(null); setPhase('brief'); };
@@ -81,9 +89,15 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
           {!inSpace && links}
         </nav>
       </header>
-      {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} />}
+      {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} globe={flight3d} />}
       {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} onBack={() => setPhase('career')} />}
-      {phase === 'launch' && <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />}
+      {phase === 'launch' && (flight3d
+        ? (
+          <Fallback2D key={runId} fallback={<Launch2D build={build} onDone={() => setPhase('flight')} />}>
+            <Suspense fallback={<div className="runner-stage g2d-launch" />}><Launch3D build={build} mission={mission} onDone={() => setPhase('flight')} /></Suspense>
+          </Fallback2D>
+        )
+        : <Launch2D key={runId} build={build} onDone={() => setPhase('flight')} />)}
       {phase === 'flight' && (flight3d
         ? (
           <Fallback2D key={runId} fallback={<Flight2D p={a.flight} m={mission} onEnd={onEnd} />}>
@@ -96,7 +110,7 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
           onNext={mission.num < MISSIONS.length ? () => pick(MISSIONS[mission.num]) : undefined} onCareer={() => setPhase('career')} />
       )}
       {phase === 'resources' && <ResourcesScreen onBack={() => setPhase('career')} />}
-      {phase === 'build' && <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} />}
+      {phase === 'build' && <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} use3d={flight3d} />}
     </div>
   );
 }
@@ -112,9 +126,11 @@ function Stars({ n, label }: { n: number; label: string }) {
 }
 
 // ---------------------------------------------------------------------------
-function Career({ stars, openAll, onOpenAll, onPick }: { stars: Record<string, number>; openAll: boolean; onOpenAll(): void; onPick(m: Mission): void }) {
+function Career({ stars, openAll, onOpenAll, onPick, globe }: { stars: Record<string, number>; openAll: boolean; onOpenAll(): void; onPick(m: Mission): void; globe: boolean }) {
   const { t } = useT();
   const unlocked = (m: Mission) => openAll || m.num === 1 || (stars[MISSIONS[m.num - 2].id] ?? 0) > 0;
+  // the globe faces the next mission to fly, then follows the row under the pointer or keyboard focus
+  const [activeId, setActiveId] = useState(() => (MISSIONS.find((m) => unlocked(m) && !(stars[m.id] ?? 0)) ?? MISSIONS[0]).id);
   const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
   const levelBars = { Cadet: 1, Engineer: 2, 'Flight Director': 3 } as const;
   return (
@@ -122,13 +138,21 @@ function Career({ stars, openAll, onOpenAll, onPick }: { stars: Record<string, n
       <div className="g2d-doc">
         <h1>{t('Mission manifest')}</h1>
         <p className="g2d-lead">{t('Six customers, six satellites. Each mission adds one new engineering problem. Earn a star to unlock the next one.')}</p>
+        {globe && (
+          <Fallback2D fallback={null}>
+            <Suspense fallback={<div className="g3d-globe-wait" />}>
+              <GlobeHero stars={stars} openAll={openAll} activeId={activeId} onHover={setActiveId} onPick={onPick} />
+            </Suspense>
+          </Fallback2D>
+        )}
         <ol className="g2d-manifest">
           {MISSIONS.map((m) => {
             const open = unlocked(m);
             const n = stars[m.id] ?? 0;
             const sketch = REAL_MISSIONS[m.id]?.sketch ?? 'low';
             return (
-              <li key={m.id} className={`g2d-mrow ${open ? '' : 'locked'}`}>
+              <li key={m.id} className={`g2d-mrow ${open ? '' : 'locked'} ${globe && activeId === m.id ? 'active' : ''}`}
+                onPointerEnter={() => setActiveId(m.id)} onFocus={() => setActiveId(m.id)}>
                 <button disabled={!open} onClick={() => onPick(m)}>
                   <span className="num">{m.num}</span>
                   <Sketch kind={sketch} className="sk" />
@@ -312,7 +336,7 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
 }
 
 // ---------------------------------------------------------------------------
-function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mission; build: Build; setBuild(b: Build): void; focus: SlotId | null; setFocus(s: SlotId | null): void; onLaunch(): void }) {
+function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch, use3d }: { m: Mission; build: Build; setBuild(b: Build): void; focus: SlotId | null; setFocus(s: SlotId | null): void; onLaunch(): void; use3d: boolean }) {
   const { t } = useT();
   const a = useMemo(() => analyse(build, m), [build, m]);
   const slots = useMemo(() => slotsFor(m), [m]);
@@ -355,7 +379,16 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch }: { m: Mis
     <div className="g2d-build">
       <div className="g2d-art">
         {m.slots.length < 6 && <p className="g2d-hint">{t('On this mission you choose only {n} things - the rest is ready.', { n: m.slots.length })}</p>}
-        <SatelliteArt build={build} mission={m} />
+        {use3d
+          ? (
+            <Fallback2D fallback={<SatelliteArt build={build} mission={m} />}>
+              <Suspense fallback={<SatelliteArt build={build} mission={m} />}>
+                <HangarView build={build} mission={m} focus={focus} />
+                <p className="g3d-hangar-hint">{t('Drag to turn the satellite.')}</p>
+              </Suspense>
+            </Fallback2D>
+          )
+          : <SatelliteArt build={build} mission={m} />}
         <div className="g2d-art-foot">
           <div className="g2d-titleblock">
             <div><span>{t('Platform')}</span><b>{busName}</b></div>

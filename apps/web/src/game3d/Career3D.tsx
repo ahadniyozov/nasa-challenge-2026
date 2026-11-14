@@ -1,6 +1,6 @@
-// 3D Career globe with 6 mission markers at their real geographical regions.
-// Hovering a marker shows the mission card; clicking an unlocked marker opens its brief.
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+// Globe above the mission manifest: 6 mission markers at their real regions.
+// Hovering a manifest row flies the camera to that mission; clicking an unlocked pin opens its brief.
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Html, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,15 +9,6 @@ import { MISSIONS, type Mission } from '../game2d/missions';
 import './game3d.css';
 
 type OrbitControlsHandle = React.ComponentRef<typeof OrbitControls>;
-
-const PROGRESS_KEY = 'g2d-progress-v1';
-function loadSavedStars(): Record<string, number> {
-  try {
-    return JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '{}') as Record<string, number>;
-  } catch {
-    return {};
-  }
-}
 
 const DEG = Math.PI / 180;
 const R_GLOBE = 1;
@@ -143,6 +134,7 @@ function CareerGlobe({
       <OrbitControls
         ref={controlsRef}
         enablePan={false}
+        enableZoom={false}
         minDistance={1.65}
         maxDistance={Math.max(3.4, baseDist + 0.6)}
         rotateSpeed={0.75}
@@ -157,13 +149,13 @@ function CareerGlobe({
       {/* Atmosphere Rim Glow */}
       <mesh scale={1.03}>
         <sphereGeometry args={[R_GLOBE, 48, 32]} />
-        <meshBasicMaterial color="#4dd2ff" transparent opacity={0.14} side={THREE.BackSide} />
+        <meshBasicMaterial color="#8fb8e0" transparent opacity={0.14} side={THREE.BackSide} />
       </mesh>
 
       {/* Subtle decorative equatorial/polar orbit rings */}
       <mesh rotation={[Math.PI / 2.2, 0.3, 0]}>
         <ringGeometry args={[1.22, 1.226, 72]} />
-        <meshBasicMaterial color="#4dd2ff" transparent opacity={0.18} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#aeb7bf" transparent opacity={0.22} side={THREE.DoubleSide} />
       </mesh>
 
       {/* 6 Mission Markers on Globe */}
@@ -171,13 +163,7 @@ function CareerGlobe({
         const open = unlocked(m);
         const nStars = stars[m.id] ?? 0;
         const isActive = activeId === m.id;
-        const color = !open
-          ? '#5a6aa8'
-          : m.level === 'Cadet'
-            ? '#3ddc84'
-            : m.level === 'Engineer'
-              ? '#ffc53d'
-              : '#ff5c6c';
+        const color = !open ? '#6b7785' : nStars > 0 ? '#3fbf7a' : '#e9edf1';
 
         return (
           <group key={m.id}>
@@ -189,11 +175,11 @@ function CareerGlobe({
               </mesh>
               <mesh position={[0, 0.055, 0]}>
                 <sphereGeometry args={[isActive ? 0.028 : 0.02, 12, 12]} />
-                <meshBasicMaterial color={isActive ? '#4dd2ff' : color} />
+                <meshBasicMaterial color={isActive ? '#ff6a2b' : color} />
               </mesh>
               <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]}>
                 <ringGeometry args={[0.032, isActive ? 0.055 : 0.044, 24]} />
-                <meshBasicMaterial color={isActive ? '#4dd2ff' : color} side={THREE.DoubleSide} transparent opacity={0.85} />
+                <meshBasicMaterial color={isActive ? '#ff6a2b' : color} side={THREE.DoubleSide} transparent opacity={0.85} />
               </mesh>
             </group>
 
@@ -211,11 +197,10 @@ function CareerGlobe({
                 }}
               >
                 <span className="p-num">{m.num}</span>
-                <span className="p-emoji">{open ? m.emoji : '🔒'}</span>
                 <span className="p-title">{t(m.title)}</span>
                 <span className="p-stars">
                   {[0, 1, 2].map((i) => (
-                    <span key={i} className={i < nStars ? 'on' : ''}>★</span>
+                    <i key={i} className={i < nStars ? 'on' : ''} />
                   ))}
                 </span>
               </button>
@@ -227,137 +212,25 @@ function CareerGlobe({
   );
 }
 
-export interface Career3DProps {
-  stars?: Record<string, number>;
-  openAll?: boolean;
-  onOpenAll?: () => void;
+export interface GlobeHeroProps {
+  stars: Record<string, number>;
+  openAll: boolean;
+  /** Mission the camera should face (a hovered or focused manifest row). */
+  activeId: string;
+  onHover(id: string): void;
   onPick(m: Mission): void;
 }
 
-export function Career3D({ stars: starsProp, openAll: openAllProp, onOpenAll, onPick }: Career3DProps) {
-  const { t } = useT();
-  const [localStars] = useState<Record<string, number>>(loadSavedStars);
-  const [localOpenAll, setLocalOpenAll] = useState(() => location.search.includes('all'));
-
-  const stars = starsProp ?? localStars;
-  const openAll = openAllProp ?? localOpenAll;
-  const handleOpenAll = () => {
-    setLocalOpenAll(true);
-    onOpenAll?.();
-  };
-
+/** Dark band with the globe, shown above the manifest list. Loaded lazily; the page works without it. */
+export function GlobeHero({ stars, openAll, activeId, onHover, onPick }: GlobeHeroProps) {
   const unlocked = (m: Mission) => openAll || m.num === 1 || (stars[MISSIONS[m.num - 2].id] ?? 0) > 0;
-  const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
-
-  // Default focused mission: highest unlocked mission without stars, or mission 1
-  const initialMission = useMemo(() => {
-    const nextUnfinished = MISSIONS.find((m) => unlocked(m) && (stars[m.id] ?? 0) === 0);
-    return (nextUnfinished ?? MISSIONS[0]).id;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const [activeId, setActiveId] = useState<string>(initialMission);
-  const [flyTargetId, setFlyTargetId] = useState<string | null>(initialMission);
-
-  const activeMission = useMemo(
-    () => MISSIONS.find((m) => m.id === activeId) ?? MISSIONS[0],
-    [activeId],
-  );
-  const activeOpen = unlocked(activeMission);
-  const activeStars = stars[activeMission.id] ?? 0;
-
   return (
-    <div className="g3d-career">
-      <div className="g3d-career-canvas">
-        <Canvas camera={{ position: [0, 0.8, 2.3], fov: 45 }} dpr={[1, 1.5]}>
-          <Suspense fallback={null}>
-            <CareerGlobe
-              stars={stars}
-              unlocked={unlocked}
-              activeId={activeId}
-              flyTargetId={flyTargetId}
-              onHover={(id) => setActiveId(id)}
-              onPick={onPick}
-            />
-          </Suspense>
-        </Canvas>
-      </div>
-
-      {/* Top Header */}
-      <div className="g3d-career-header">
-        <h1>{t('Choose a mission')}</h1>
-        <p>
-          {t('Each customer needs a different satellite. Earn at least 1 ★ to unlock the next mission.')}{' '}
-          <b>★ {total} / {MISSIONS.length * 3}</b>
-        </p>
-        {!openAll && (
-          <div className="g3d-open-btn">
-            <button type="button" className="g2d-ghost small" onClick={handleOpenAll}>
-              {t('🔓 Open all missions')}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Dock: Mission Card + Quick Selector Bar */}
-      <div className="g3d-career-dock">
-        <div className="g3d-preview-card">
-          <div className="emoji">{activeOpen ? activeMission.emoji : '🔒'}</div>
-          <div className="info">
-            <div className="info-top">
-              <b>{activeMission.num}. {t(activeMission.title)}</b>
-              <span className="lvl">{t(activeMission.level)}</span>
-              <span className="mstars">
-                {[0, 1, 2].map((i) => (
-                  <span key={i} className={i < activeStars ? 'on' : ''}>★</span>
-                ))}
-              </span>
-            </div>
-            <small>{t(activeMission.learn)}</small>
-          </div>
-          <button
-            type="button"
-            className="r-btn"
-            disabled={!activeOpen}
-            onClick={() => {
-              if (activeOpen) onPick(activeMission);
-            }}
-          >
-            {activeOpen ? '▶' : '🔒'}
-          </button>
-        </div>
-
-        <div className="g3d-mission-strip">
-          {MISSIONS.map((m) => {
-            const open = unlocked(m);
-            const n = stars[m.id] ?? 0;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                className={`g3d-mstrip-btn ${open ? '' : 'locked'} ${activeId === m.id ? 'active' : ''}`}
-                disabled={!open}
-                onPointerEnter={() => {
-                  setActiveId(m.id);
-                  setFlyTargetId(m.id);
-                }}
-                onClick={() => {
-                  setActiveId(m.id);
-                  setFlyTargetId(m.id);
-                  if (open) onPick(m);
-                }}
-              >
-                <span className="s-top">{open ? m.emoji : '🔒'}</span>
-                <span className="s-title">{m.num}. {t(m.title)}</span>
-                <span className="s-stars">
-                  {[0, 1, 2].map((i) => (
-                    <span key={i} className={i < n ? 'on' : ''}>★</span>
-                  ))}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    <div className="g3d-globe">
+      <Canvas camera={{ position: [0, 0.8, 2.3], fov: 45 }} dpr={[1, 1.5]}>
+        <Suspense fallback={null}>
+          <CareerGlobe stars={stars} unlocked={unlocked} activeId={activeId} flyTargetId={activeId} onHover={onHover} onPick={onPick} />
+        </Suspense>
+      </Canvas>
     </div>
   );
 }

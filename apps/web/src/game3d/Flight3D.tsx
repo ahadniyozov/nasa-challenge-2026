@@ -11,13 +11,13 @@ import type { Mission } from '../game2d/missions';
 import { createSim, stepSim, type FlightStats, type SimInput, type SimState } from '../game2d/sim';
 import { useT } from '../i18n';
 import { Earth } from './flight/Earth';
-import { FlightSatellite, SatelliteStandIn } from './flight/FlightSatellite';
+import { FlightModel, FlightSatellite } from './flight/FlightSatellite';
 import { Targets } from './flight/Targets';
 import { makeTrack, REACH_X, SAT_ALT, sunDir, trackPos, type Track } from './flight/track';
 import { Debris, Lanes, Stations, StormSparks } from './flight/World';
 import './flight3d.css';
 
-/** `build` is the player's satellite: developer 2's SatelliteModel draws it (until then a stand-in). */
+/** `build` is the player's satellite, drawn by SatelliteModel. */
 export default function Flight3D({ p, m, build, onEnd, seed }: { p: FlightParams; m: Mission; build: Build; onEnd(s: FlightStats): void; seed?: number }) {
   const { t } = useT();
   const [hud, setHud] = useState(() => initialHud(p));
@@ -59,7 +59,6 @@ function Scene({ s, build, control, msgs, setHud, overlay, reachLabel }: {
   const satPos = useMemo(() => new THREE.Vector3(1, SAT_ALT, 0), []);
   const photoAt = useRef(-9);
   const hitAt = useRef(-9);
-  const asleep = useRef(false);
   const hudAt = useRef(0);
 
   // ---- the game loop: step the rules first (priority -1), everything else reads SimState after
@@ -71,7 +70,6 @@ function Scene({ s, build, control, msgs, setHud, overlay, reachLabel }: {
       if (e.type === 'photo') photoAt.current = s.t;
       if (e.type === 'hit' || e.type === 'stormHit') hitAt.current = s.t;
     }
-    asleep.current = s.asleep;
     if (s.t - hudAt.current > 0.1 || s.ended) { hudAt.current = s.t; setHud(hudOf(s, msgs.current(s))); }
 
     // screen-wide flashes: white for a photo, red for a hit, orange during a solar storm
@@ -95,8 +93,7 @@ function Scene({ s, build, control, msgs, setHud, overlay, reachLabel }: {
       <Stations s={s} tr={tr} satPos={satPos} />
       <StormSparks s={s} />
       <FlightSatellite s={s} pos={satPos} photoAt={photoAt}>
-        {/* TODO(dev2): <SatelliteModel build={build} mission={s.m} shadow={s.shadow} asleep={s.asleep} safe={s.safe} /> */}
-        <SatelliteStandIn asleep={asleep} build={build} />
+        <FlightModel s={s} build={build} />
       </FlightSatellite>
       {!s.p.reachesTargets && <ReachLabel tr={tr} text={reachLabel} />}
     </>

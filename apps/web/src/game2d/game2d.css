@@ -32,6 +32,9 @@
   padding: 16px 8px; background: none; border: 0; text-align: left; color: var(--ink); cursor: pointer;
 }
 .g2d-mrow > button:hover:not(:disabled) { background: var(--sheet); }
+.g2d-mrow.active .num { color: var(--orange); }
+.g3d-globe-wait { height: 360px; margin: 0 0 28px; border-radius: 8px; background: var(--space); }
+@media (max-width: 700px) { .g3d-globe-wait { height: 260px; margin-bottom: 20px; } }
 .g2d-mrow .num { font-family: var(--display); font-size: 34px; font-weight: 700; color: var(--rule-strong); }
 .g2d-mrow .sk { width: 64px; height: 64px; }
 .g2d-mrow .t b { display: block; font-family: var(--display); font-size: 25px; font-weight: 600; line-height: 1.1; }

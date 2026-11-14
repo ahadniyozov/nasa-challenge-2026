@@ -54,6 +54,8 @@ export const RU_UI: Record<string, string> = {
   'Fly over cities to photograph them, then over a ground station to send the photos home.': 'Пролетай над городами, потом над наземной станцией, чтобы отправить снимки домой.',
   // launch
   'Spacecraft separation. In orbit': 'Отделение спутника. Он на орбите', '{rocket} rocket to {km} km': 'Ракета «{rocket}» на высоту {km} км',
+  // 3D
+  'Drag to turn the satellite.': 'Потяни, чтобы повернуть спутник.',
   // real NASA photos of the parts
   'Photo: {credit}': 'Фото: {credit}', 'Photos of real hardware': 'Фото настоящей техники',
   'Neutron-1, a 3U CubeSat, before flight (2020)': 'Neutron-1, CubeSat 3U, перед полётом (2020)',

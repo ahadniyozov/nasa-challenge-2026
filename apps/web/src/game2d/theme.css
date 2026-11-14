@@ -146,6 +146,13 @@
   .r-flash { font-size: 24px; }
   .r-tip { font-size: 14px; top: auto; bottom: 90px; }
 }
+@media (max-width: 420px) {
+  .runner-top { gap: 4px; padding: 0 8px; }
+  .runner-top .logo { font-size: 17px; }
+  .runner-links { gap: 0; }
+  .runner .link { padding: 6px 5px; font-size: 13px; }
+  .runner .lang-toggle button { padding-left: 6px; padding-right: 6px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .r-chip.storm.now { animation: none; }
 }
