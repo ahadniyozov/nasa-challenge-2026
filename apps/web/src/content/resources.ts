@@ -43,6 +43,8 @@ export const RESOURCES: ResourceGroup[] = [
       {
         emoji: '🧪', title: 'NASA: Design and Develop Science Missions',
         where: 'Mission 2: matching the instrument, orbit and data link to the customer\'s needs.',
+        // NASA S3VI Systems Engineering Series, session 4 (slides)
+        url: 'https://www.nasa.gov/wp-content/uploads/2025/04/250323-design-and-develop-science-mission.pdf',
       },
       {
         emoji: '🧭', title: 'NASA Mission Design Lab: orbit design, radiation and trade studies',
@@ -52,6 +54,8 @@ export const RESOURCES: ResourceGroup[] = [
       {
         emoji: '🎞️', title: 'NASA Mission Viz: orbits and timelines',
         where: 'Mission 4: why a geostationary orbit watches one place nonstop.',
+        // NASA Web-based Space Mission Visualization (github.com/nasa/mission-viz)
+        url: 'https://nasa.github.io/mission-viz/',
       },
     ],
   },
