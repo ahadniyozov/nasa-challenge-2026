@@ -1,0 +1,8 @@
+# Keep the Docker build context small and free of local (e.g. Windows) builds.
+**/node_modules
+**/dist
+.git
+.github
+**/*.log
+deploy/.env
+data

@@ -1,18 +1,44 @@
-# DOMAIN comes from docker-compose (.env). Caddy gets HTTPS certificates automatically.
+# The game is static files (apps/web/dist, copied to /srv). Caddy serves them over HTTPS.
+# DOMAIN comes from deploy/.env via docker-compose:
+#   mission.example.com → real HTTPS certificate from Let's Encrypt (DNS A record must point here)
+#   localhost           → local HTTPS with Caddy's own certificate (the browser warns once)
+#   :80                 → plain HTTP, no certificate: quickest local test
 {$DOMAIN:localhost} {
+	# compress text (JS, CSS, HTML, JSON, SVG); images such as .webp are already compressed
 	encode zstd gzip
 
+	# Optional multiplayer server of the old engineer mode (compose profile "multiplayer").
+	# The game does not call these paths; without the server they simply return 502.
 	handle /socket.io/* {
 		reverse_proxy server:8787
 	}
 	handle /api/* {
 		reverse_proxy server:8787
 	}
+
 	handle {
 		root * /srv
-		@assets path /assets/* /textures/*
+
+		header X-Content-Type-Options nosniff
+
+		# /assets/*: file names contain a content hash (index-Cgz0E3P8.js) → cache for a year
+		@assets path /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
-		try_files {path} /index.html
+
+		# /textures/*: no hash in the name → cache a week, then check again
+		@textures path /textures/*
+		header @textures Cache-Control "public, max-age=604800"
+
+		# index.html and everything else: always ask the server, so a new deploy shows up at once
+		@other not path /assets/* /textures/*
+		header @other Cache-Control "no-cache"
+
+		# be explicit about the MIME type of WebP textures
+		@webp path *.webp
+		header @webp Content-Type image/webp
+
+		# no SPA fallback: the game has no client-side routes (only ?2d, ?all), and a missing
+		# /assets/*.js must be a 404, not index.html with a one-year cache
 		file_server
 	}
 }

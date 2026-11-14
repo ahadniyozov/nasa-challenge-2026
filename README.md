@@ -45,14 +45,14 @@ Two URL options help with demos:
 
 ## Deploy (VPS + domain)
 
+The game is static files served by Caddy with automatic HTTPS. Point a DNS A record at the server, then:
+
 ```bash
-cd deploy
-cp .env.example .env        # set DOMAIN=mission.your-domain
-docker compose up -d --build
+./deploy/deploy.sh mission.your-domain   # first run: saves the domain, builds, starts
+./deploy/deploy.sh                       # update: git pull + rebuild
 ```
 
-1. Point an A record for the subdomain at the server first.
-2. If ports 80/443 are already used by another service, remove `ports` from `web` and route to it from your existing reverse proxy.
+Full guide (server setup, DNS, HTTPS checks, cache headers): [deploy/README.md](deploy/README.md).
 
 ## Model notes
 
