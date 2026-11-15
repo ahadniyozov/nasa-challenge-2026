@@ -18,7 +18,7 @@
 .g2d-flight .k { display: block; font-size: 12px; font-weight: 500; line-height: 1.2; color: var(--space-dim); }
 
 /* ---- instrument band */
-.fh-band { top: 12px; left: 12px; display: flex; border-radius: 6px; }
+.fh-band { top: 12px; left: 12px; display: flex; border-radius: 14px; }
 .fh-cell { padding: 8px 16px 9px; border-left: 1px solid var(--fh-line); display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
 .fh-cell:first-child { border-left: 0; }
 .fh-goal b { font-family: var(--display); font-size: 32px; font-weight: 600; line-height: .9; }
@@ -37,7 +37,7 @@
 .fh-bat.low b { color: var(--fh-red); }
 
 /* ---- orbit dial: seen from above the pole */
-.fh-orbit { top: 12px; right: 12px; display: flex; align-items: center; gap: 12px; padding: 6px 16px 6px 8px; border-radius: 6px; }
+.fh-orbit { top: 12px; right: 12px; display: flex; align-items: center; gap: 12px; padding: 6px 18px 6px 8px; border-radius: 999px; }
 .fh-dial { width: 52px; height: 52px; display: block; }
 .fh-dial .sunlit { fill: none; stroke: var(--fh-sun); stroke-width: 2; opacity: .85; }
 .fh-dial .dark { fill: none; stroke: #4a55a8; stroke-width: 4; }
@@ -48,25 +48,27 @@
 .fh-progress i { display: block; height: 100%; background: var(--space-text); }
 
 /* ---- operations log: newest at the bottom, a coloured edge says what kind of news it is */
-.fh-log { top: 96px; left: 12px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; max-width: min(420px, 70vw); }
+.fh-log { top: 96px; left: 12px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: min(420px, 70vw); }
 .fh-log li {
-  padding: 7px 14px 7px 12px; border-radius: 0 6px 6px 0; border-left: 3px solid var(--space-dim);
+  padding: 7px 16px 7px 12px; border-radius: 999px; border-left: 0; display: flex; align-items: center; gap: 10px;
   font-size: 16px; font-weight: 600; line-height: 1.3; animation: fh-in .22s ease-out;
 }
-.fh-log li.good { border-left-color: var(--fh-link); }
-.fh-log li.info { border-left-color: var(--fh-night); }
-.fh-log li.warn { border-left-color: var(--fh-amber); }
-.fh-log li.bad { border-left-color: var(--fh-red); background: rgba(60, 14, 16, .86); }
+.fh-log li::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--space-dim); }
+.fh-log li.good::before { background: var(--fh-link); }
+.fh-log li.info::before { background: var(--fh-night); }
+.fh-log li.warn::before { background: var(--fh-amber); }
+.fh-log li.bad::before { background: var(--fh-red); }
+.fh-log li.bad { background: rgba(60, 14, 16, .86); }
 @keyframes fh-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
 
-.fh-tip { left: 50%; transform: translateX(-50%); top: 128px; border-radius: 6px; padding: 10px 16px; font-size: 16px; text-align: center; max-width: min(560px, 92%); }
+.fh-tip { left: 50%; transform: translateX(-50%); top: 128px; border-radius: 14px; padding: 10px 16px; font-size: 16px; text-align: center; max-width: min(560px, 92%); }
 
 /* ---- annunciator panel */
-.fh-annun { bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; border-radius: 8px; }
+.fh-annun { bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; border-radius: 999px; }
 .fh-lamp {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 18px; border-radius: 999px;
   font: 600 14px 'Barlow', sans-serif; white-space: nowrap;
-  color: #5d6b7a; background: #0d1624; border: 1px solid #1f2b3b;
+  color: #6b7988; background: #101b2b; border: 1.5px solid transparent;
 }
 .fh-lamp.on { color: #0a1320; }
 .fh-lamp.on.sun { background: var(--fh-sun); border-color: var(--fh-sun); box-shadow: 0 0 14px rgba(242, 196, 99, .35); }
@@ -76,15 +78,19 @@
 .fh-lamp.on.storm.now { background: var(--fh-amber); color: #1d1408; animation: fh-blink 1s steps(2, jump-none) infinite; }
 @keyframes fh-blink { 50% { background: #7a5520; color: #ffd9a0; } }
 /* Safe mode: the only switch on the panel */
-.fh-switch { pointer-events: auto; cursor: pointer; color: var(--space-text); border-color: rgba(242, 169, 59, .6); box-shadow: 0 2px 0 #05080e; }
+.fh-switch { pointer-events: auto; cursor: pointer; color: var(--space-text); border-color: rgba(242, 169, 59, .6); }
 .fh-switch:hover { border-color: var(--fh-amber); }
-.fh-switch:active { transform: translateY(2px); box-shadow: none; }
+.fh-switch:active { transform: scale(.97); }
 .fh-switch.on { background: var(--fh-amber); border-color: var(--fh-amber); color: #1d1408; box-shadow: 0 0 16px rgba(242, 169, 59, .45); }
-.fh-switch kbd { font: 600 12px 'Barlow', sans-serif; border: 1px solid currentColor; border-radius: 3px; padding: 0 5px; opacity: .7; }
+.fh-switch { padding-right: 8px; }
+.fh-switch::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #4a3f22; }
+.fh-switch.on::before { background: #fff6d8; box-shadow: 0 0 8px #fff6d8; }
+.fh-switch kbd { height: 24px; display: inline-flex; align-items: center; padding: 0 9px; border-radius: 999px; background: #1d2a3c; color: var(--space-dim); font: 600 12px 'Barlow', sans-serif; }
+.fh-switch.on kbd { background: rgba(29, 20, 8, .15); color: #1d1408; }
 .fh-switch:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 @media (max-width: 760px) {
-  .fh-band { left: 8px; top: 8px; right: 8px; flex-wrap: wrap; }
+  .fh-band { left: 8px; top: 8px; right: 8px; flex-wrap: wrap; border-radius: 12px; }
   .fh-cell { padding: 6px 10px 7px; flex: 1 1 auto; }
   .fh-bat { flex-basis: 100%; border-left: 0; border-top: 1px solid var(--fh-line); flex-direction: row; align-items: center; justify-content: space-between; }
   .fh-goal b { font-size: 26px; }
@@ -96,7 +102,7 @@
   .fh-log { top: 130px; left: 8px; max-width: calc(100% - 16px); }
   .fh-log li { font-size: 14px; }
   .fh-tip { font-size: 14px; top: 130px; left: 8px; right: 8px; transform: none; max-width: none; }
-  .fh-annun { bottom: 8px; left: 8px; right: 8px; transform: none; flex-wrap: wrap; justify-content: center; }
+  .fh-annun { bottom: 8px; left: 8px; right: 8px; transform: none; flex-wrap: wrap; justify-content: center; border-radius: 22px; }
   .fh-lamp { min-height: 32px; padding: 0 10px; font-size: 13px; flex: 1 1 auto; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {

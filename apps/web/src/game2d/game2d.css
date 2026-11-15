@@ -126,7 +126,7 @@
 .g2d-opts { display: grid; gap: 6px; padding: 0 0 14px; }
 .g2d-opt {
   display: grid; grid-template-columns: 18px minmax(0, 1fr); column-gap: 10px; text-align: left;
-  background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; color: var(--ink); cursor: pointer;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; padding: 10px 12px; color: var(--ink); cursor: pointer;
 }
 .g2d-opt::before { content: ''; grid-row: span 2; width: 14px; height: 14px; margin-top: 3px; border-radius: 50%; border: 1.5px solid var(--rule-strong); }
 .g2d-opt b { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
