@@ -1,6 +1,6 @@
 // TEMPORARY Russian for crew mode. Delete before the final build.
 export const RU_CREW: Record<string, string> = {
-  'Mission control': 'Центр управления',
+  'Mission control': 'Центр управления', Home: 'Главная',
   'Design a real satellite for a real customer, launch it and fly it. Alone, or with a crew of up to four.': 'Спроектируй настоящий спутник для настоящего заказчика, запусти его и проведи миссию. Один или командой до четырёх человек.',
   '1 player': '1 игрок', '2-4 players': '2–4 игрока', 'Solo missions': 'Одиночные миссии', 'Crew mission': 'Командная миссия',
   'You are the whole team: six customers, six satellites, from a student CubeSat to a city map.': 'Ты — вся команда сразу: шесть заказчиков, шесть спутников, от студенческого CubeSat до карты города.',

@@ -239,7 +239,7 @@
 .g2d-mode-meta { font-size: 14px; }
 .g2d-mode-go { grid-column: 2; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .g2d-mode-go .r-btn { margin: 5px; }
-.g2d-mode-link { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.g2d-mode-link { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .g2d-manifest-title { font-family: var(--display); font-size: 30px; font-weight: 600; margin: 0 0 4px; scroll-margin-top: 20px; }
 .g2d-lead.small { font-size: 17px; margin-bottom: 20px; }
 @media (max-width: 860px) {

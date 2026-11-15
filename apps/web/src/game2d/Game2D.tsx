@@ -29,7 +29,7 @@ export class Fallback2D extends Component<{ fallback: ReactNode; children: React
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build' | 'resources' | 'crew';
+type Phase = 'career' | 'missions' | 'brief' | 'launch' | 'flight' | 'report' | 'build' | 'resources' | 'crew';
 /** crew mode (2-4 players) lives in its own chunk with the network client */
 const CrewGame = lazy(() => import('../crew/CrewGame').then((m) => ({ default: m.CrewGame })));
 const CREW_CODE = new URLSearchParams(location.search).get('crew');
@@ -84,18 +84,19 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
   return (
     <div className={`runner g2d ${inSpace ? 'in-space' : ''}`}>
       <header className="runner-top">
-        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : phase === 'crew' ? t('Crew mode') : t(mission.title)}</small></div>
+        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'missions' || phase === 'resources' ? t('Mission Control') : phase === 'crew' ? t('Crew mode') : t(mission.title)}</small></div>
         <nav className="runner-links" aria-label={t('Menu')}>
-          {!inSpace && phase !== 'career' && phase !== 'crew' && <button className="link" onClick={() => setPhase('career')}>{t('Missions')}</button>}
+          {!inSpace && phase !== 'career' && phase !== 'crew' && <button className="link" onClick={() => setPhase('career')}>{t('Home')}</button>}
           {!inSpace && phase !== 'resources' && phase !== 'crew' && <button className="link" onClick={() => setPhase('resources')} title={t('NASA Resources')}>{t('Resources')}</button>}
           <SoundToggle />
           {/* in flight only the sound button: nothing that leaves the mission or restarts it by accident */}
           {!inSpace && links}
         </nav>
       </header>
-      {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} globe={flight3d} onCrew={() => setPhase('crew')} />}
+      {phase === 'career' && <Home stars={stars} openAll={openAll} onPick={pick} onList={() => setPhase('missions')} onCrew={() => setPhase('crew')} />}
+      {phase === 'missions' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} globe={flight3d} onBack={() => setPhase('career')} />}
       {phase === 'crew' && <Suspense fallback={<div className="g2d-page" />}><CrewGame code={CREW_CODE} flight3d={flight3d} onSpace={setCrewSpace} onExit={() => { setCrewSpace(false); setPhase('career'); }} /></Suspense>}
-      {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} onBack={() => setPhase('career')} />}
+      {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} onBack={() => setPhase('missions')} />}
       {phase === 'launch' && (flight3d
         ? (
           <Fallback2D key={runId} fallback={<Launch2D build={build} onDone={() => setPhase('flight')} />}>
@@ -112,7 +113,7 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
         : <Flight2D key={runId} p={a.flight} m={mission} onEnd={onEnd} />)}
       {phase === 'report' && stats && (
         <Report tr={tr} m={mission} a={a} stats={stats} isTest={isTest} onStars={record} onFix={toBuild} onAgain={() => fly(isTest)}
-          onNext={mission.num < MISSIONS.length ? () => pick(MISSIONS[mission.num]) : undefined} onCareer={() => setPhase('career')} />
+          onNext={mission.num < MISSIONS.length ? () => pick(MISSIONS[mission.num]) : undefined} onCareer={() => setPhase('missions')} />
       )}
       {phase === 'resources' && <ResourcesScreen onBack={() => setPhase('career')} />}
       {phase === 'build' && <BuildScreen m={mission} build={build} setBuild={setBuild} focus={focus} setFocus={setFocus} onLaunch={() => fly(false)} use3d={flight3d} />}
@@ -155,13 +156,11 @@ function ModeArt({ crew }: { crew: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-function Career({ stars, openAll, onOpenAll, onPick, globe, onCrew }: { stars: Record<string, number>; openAll: boolean; onOpenAll(): void; onPick(m: Mission): void; globe: boolean; onCrew(): void }) {
+/** The home screen: two ways to play. */
+function Home({ stars, openAll, onPick, onList, onCrew }: { stars: Record<string, number>; openAll: boolean; onPick(m: Mission): void; onList(): void; onCrew(): void }) {
   const { t } = useT();
   const unlocked = (m: Mission) => openAll || m.num === 1 || (stars[MISSIONS[m.num - 2].id] ?? 0) > 0;
-  // the globe faces the next mission to fly, then follows the row under the pointer or keyboard focus
-  const [activeId, setActiveId] = useState(() => (MISSIONS.find((m) => unlocked(m) && !(stars[m.id] ?? 0)) ?? MISSIONS[0]).id);
   const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
-  const levelBars = { Cadet: 1, Engineer: 2, 'Flight Director': 3 } as const;
   const next = MISSIONS.find((m) => unlocked(m) && !(stars[m.id] ?? 0)) ?? MISSIONS.filter(unlocked).at(-1) ?? MISSIONS[0];
   return (
     <div className="g2d-page">
@@ -175,7 +174,7 @@ function Career({ stars, openAll, onOpenAll, onPick, globe, onCrew }: { stars: R
               <span className="g2d-mode-tag">{t('1 player')}</span>
               <h2>{t('Solo missions')}</h2>
               <p>{t('You are the whole team: six customers, six satellites, from a student CubeSat to a city map.')}</p>
-              <p className="g2d-mode-meta">{t('Stars earned: {n} of {m}', { n: total, m: MISSIONS.length * 3 })}. <a className="g2d-mode-link" href="#manifest">{t('All missions')}</a></p>
+              <p className="g2d-mode-meta">{t('Stars earned: {n} of {m}', { n: total, m: MISSIONS.length * 3 })}. <button className="g2d-mode-link" onClick={onList}>{t('All missions')}</button></p>
             </div>
             <div className="g2d-mode-go">
               <button className="r-btn" onClick={() => onPick(next)}>{total === 0 ? t('Start mission 1') : t('Continue: mission {n}', { n: next.num })}</button>
@@ -194,8 +193,24 @@ function Career({ stars, openAll, onOpenAll, onPick, globe, onCrew }: { stars: R
             </div>
           </section>
         </div>
-        <h2 id="manifest" className="g2d-manifest-title">{t('Solo missions')}</h2>
-        <p className="g2d-lead small">{t('Six customers, six satellites. Each mission adds one new engineering problem. Earn a star to unlock the next one.')}</p>
+      </div>
+    </div>
+  );
+}
+
+function Career({ stars, openAll, onOpenAll, onPick, globe, onBack }: { stars: Record<string, number>; openAll: boolean; onOpenAll(): void; onPick(m: Mission): void; globe: boolean; onBack(): void }) {
+  const { t } = useT();
+  const unlocked = (m: Mission) => openAll || m.num === 1 || (stars[MISSIONS[m.num - 2].id] ?? 0) > 0;
+  // the globe faces the next mission to fly, then follows the row under the pointer or keyboard focus
+  const [activeId, setActiveId] = useState(() => (MISSIONS.find((m) => unlocked(m) && !(stars[m.id] ?? 0)) ?? MISSIONS[0]).id);
+  const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
+  const levelBars = { Cadet: 1, Engineer: 2, 'Flight Director': 3 } as const;
+  return (
+    <div className="g2d-page">
+      <div className="g2d-doc">
+        <button className="g2d-back" onClick={onBack}>{t('Home')}</button>
+        <h1>{t('Solo missions')}</h1>
+        <p className="g2d-lead">{t('Six customers, six satellites. Each mission adds one new engineering problem. Earn a star to unlock the next one.')}</p>
         {globe && (
           <Fallback2D fallback={null}>
             <Suspense fallback={<div className="g3d-globe-wait" />}>
