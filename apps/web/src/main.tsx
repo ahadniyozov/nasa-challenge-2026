@@ -2,7 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { installClickSound } from './game3d/audio';
 import { Game2D } from './game2d/Game2D';
-import { LangToggle } from './i18n/LangToggle';
 import './styles.css';
 import './game2d/theme.css';
 import './game2d/game2d.css';
@@ -21,6 +20,6 @@ const FLIGHT_3D = !new URLSearchParams(location.search).has('2d') && hasWebGL();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Game2D flight3d={FLIGHT_3D} links={<LangToggle />} />
+    <Game2D flight3d={FLIGHT_3D} links={null} />
   </StrictMode>,
 );
