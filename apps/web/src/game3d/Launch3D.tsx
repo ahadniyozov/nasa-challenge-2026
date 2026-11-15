@@ -416,6 +416,9 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
   const spec = ROCKETS[build.rocket] ?? ROCKETS.rideshare;
   const { R, H1, H2, HF, fairingR: RF } = spec;
   const { camera, scene } = useThree();
+  // a phone held upright: the vehicle is wide in the ascent and orbit shots, so the camera steps back
+  const aspect = useThree((st) => st.size.width / Math.max(1, st.size.height));
+  const fit = aspect < 1 ? Math.min(1.9, 0.82 / aspect) : 1;
   const cam = camera as THREE.PerspectiveCamera;
   const fog = useMemo(() => new THREE.Fog('#a58a7c', 70, 520), []);
   useStudioEnvironment();
@@ -656,7 +659,7 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
         // a long lens a few hundred metres away: tracks the rocket up, shakes when the sound arrives
         const p = t / T_ASCENT;
         camera.position.set(
-          THREE.MathUtils.lerp(9.5, 8.2, p) * PAD_CAM, THREE.MathUtils.lerp(1.2, 1.6, p), THREE.MathUtils.lerp(11, 9.8, p) * PAD_CAM,
+          THREE.MathUtils.lerp(9.5, 8.2, p) * PAD_CAM * Math.sqrt(fit), THREE.MathUtils.lerp(1.2, 1.6, p), THREE.MathUtils.lerp(11, 9.8, p) * PAD_CAM * Math.sqrt(fit),
         );
         look.set(0, Math.max(total * 0.5, y + total * 0.5 - 0.4), 0);
         const rumble = smooth(T_IGNITE + 0.25, T_LIFTOFF + 0.3, t) * (1 - smooth(1.0, 1.6, fly) * 0.6);
@@ -665,7 +668,7 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
         camera.lookAt(look);
       } else {
         // chase camera from below and to the side, far enough for the whole rocket and its plume
-        const k = total / 4.4 * 1.25;
+        const k = total / 4.4 * 1.25 * fit;
         v.localToWorld(tmp.set(0, total * 0.15, 0));
         camera.position.set(tmp.x + 4.6 * k, tmp.y - 1.6 * k, tmp.z + 6.2 * k);
         camera.lookAt(tmp.x, tmp.y, tmp.z);
@@ -724,7 +727,7 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
     v.localToWorld(tmp.set(0, H1 + (H2 + HF) * 0.45, 0));
     sat.current!.getWorldPosition(look);
     tmp.lerp(look, push * 0.6);
-    const d = (3.4 * (H2 + HF) + 2.6) * (1 - push * 0.3);
+    const d = (3.4 * (H2 + HF) + 2.6) * (1 - push * 0.3) * fit;
     camera.position.set(tmp.x - 0.12 * d + to * 0.08, tmp.y + 0.2 * d, tmp.z + d);
     camera.lookAt(tmp.x, tmp.y - 0.05 * d, tmp.z);
   });
