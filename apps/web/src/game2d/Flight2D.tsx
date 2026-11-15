@@ -144,7 +144,7 @@ export function Flight2D({ p, m, onEnd, seed }: { p: FlightParams; m: Mission; o
         ctx.restore();
       }
 
-      if (++hudTick % 6 === 0) setHud(hudOf(s, msgs.current(s)));
+      if (++hudTick % 6 === 0) setHud(hudOf(s, msgs.entries(s)));
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

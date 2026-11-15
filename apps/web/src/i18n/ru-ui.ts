@@ -45,7 +45,7 @@ export const RU_UI: Record<string, string> = {
   'Solar storm ahead': 'Впереди солнечная буря', 'Solar storm': 'Солнечная буря',
   'Use the arrow keys to change lane.': 'Стрелки ← → меняют полосу.', 'Tap Safe mode during solar storms.': 'Во время бури нажми «Безопасный режим».',
   'SPACE turns on safe mode during solar storms.': 'ПРОБЕЛ включает безопасный режим во время бурь.',
-  Space: 'Пробел', 'Move left': 'Влево', 'Move right': 'Вправо', 'Safe mode': 'Безопасный режим',
+  Space: 'Пробел', Charging: 'Зарядка', Downlink: 'Связь с Землёй', 'Spacecraft status': 'Состояние спутника', 'Move left': 'Влево', 'Move right': 'Вправо', 'Safe mode': 'Безопасный режим',
   'Fly over a target to take a photo, then over a ground station to send it home.': 'Пролети над целью, чтобы сделать снимок, потом над наземной станцией, чтобы отправить его домой.',
   'Fly over a fire to photograph it, then over a ground station to send the photo home.': 'Пролети над пожаром, чтобы снять его, потом над наземной станцией, чтобы отправить снимок домой.',
   'Fly over glaciers to photograph them, then over a ground station to send the photos home.': 'Пролетай над ледниками, потом над наземной станцией, чтобы отправить снимки домой.',

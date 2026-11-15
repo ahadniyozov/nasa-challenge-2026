@@ -46,7 +46,7 @@ function Dashes({ s, tr, xs, color, opacity, alt }: { s: SimState; tr: Track; xs
 export function Lanes({ s, tr }: { s: SimState; tr: Track }) {
   return (
     <>
-      <Dashes s={s} tr={tr} xs={[-GAP, 0, GAP]} color="#4dd2ff" opacity={0.45} alt={SAT_ALT - 0.35} />
+      <Dashes s={s} tr={tr} xs={[-GAP, 0, GAP]} color="#9fb3c8" opacity={0.32} alt={SAT_ALT - 0.35} />
       {!s.p.reachesTargets && <Dashes s={s} tr={tr} xs={[REACH_X]} color="#ff5a5a" opacity={0.9} alt={GROUND_ALT + 0.02} />}
     </>
   );

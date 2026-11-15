@@ -98,61 +98,7 @@
 .r-btn:focus-visible, .g2d-ghost:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .r-btn, .g2d-ghost { transition: none; } .r-btn:active, .g2d-ghost:active { transform: none; } }
 
-/* ---- flight HUD (dark glass over the canvas) */
-.r-hud { position: absolute; left: 0; right: 0; display: flex; gap: 8px; padding: 12px; align-items: stretch; flex-wrap: wrap; pointer-events: none; z-index: 5; }
-.r-hud.top { top: 0; }
-.r-hud.bottom { bottom: 0; justify-content: center; align-items: center; }
-.r-hud > * {
-  background: var(--space-panel); border: 1px solid var(--space-line); border-radius: 6px;
-  padding: 7px 14px; color: var(--space-text); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-}
-/* the instruments sit side by side in one strip, split by hairlines, like a glass-cockpit band */
-.r-hud.top, .r-hud.bottom { gap: 0; row-gap: 6px; }
-.r-hud.top > *, .r-hud.bottom > * { border-radius: 0; border-left-width: 0; }
-.r-hud.top > :first-child, .r-hud.bottom > :first-child { border-left-width: 1px; border-radius: 6px 0 0 6px; }
-.r-hud.top > .r-hp, .r-hud.bottom > :last-child { border-radius: 0 6px 6px 0; }
-.r-hud.bottom > :only-child { border-radius: 6px; }
-.r-hud.top > .r-orbit { border-left-width: 1px; border-radius: 6px; }
-.r-hud label, .r-hud .k { display: block; font-size: 12px; color: var(--space-dim); font-weight: 500; line-height: 1.2; }
-.r-goal b { font-family: var(--display); font-size: 30px; font-weight: 700; display: block; line-height: 1; }
-.r-goal b em { font-style: normal; color: var(--space-dim); font-weight: 500; }
-.r-mem { display: flex; flex-direction: column; justify-content: center; gap: 5px; }
-.r-mem .cells, .r-hp .cells { display: flex; gap: 3px; }
-.r-mem .cells span { width: 10px; height: 16px; border-radius: 2px; border: 1px solid #5d6b7a; }
-.r-mem .cells span.full { background: var(--kapton); border-color: var(--kapton); }
-.r-hp { display: flex; flex-direction: column; justify-content: center; gap: 5px; }
-.r-hp .cells span { width: 22px; height: 8px; border-radius: 1px; background: #e9edf1; }
-.r-hp .cells span.lost { background: transparent; outline: 1px solid #5d6b7a; outline-offset: -1px; }
-.r-orbit { margin-left: auto; min-width: 240px; }
-.r-strip { position: relative; height: 10px; background: #e3b34a; border-radius: 2px; margin-top: 6px; }
-.r-strip .shadow { position: absolute; top: 0; bottom: 0; background: #0a1320; outline: 1px solid #3b4a5c; }
-.r-strip .you { position: absolute; top: -4px; width: 3px; height: 18px; background: #fff; transform: translateX(-50%); }
-.g2d-flight .mini-track { height: 3px; background: #23324a; margin-top: 7px; }
-.g2d-flight .mini-track div { height: 100%; background: var(--space-text); }
-.r-chip { font-weight: 600; font-size: 15px; }
-.r-chip.day { color: #f2c463; }
-.r-chip.night { color: #a9b8ff; }
-.r-chip.contact { color: #5fe39a; border-color: #2f8f5c; }
-.r-chip.storm { color: #ffb15c; border-color: #b8691f; }
-.r-chip.storm.now { animation: r-pulse .5s infinite alternate; }
-@keyframes r-pulse { to { opacity: .55; } }
-.r-battery { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--space-dim); }
-.r-bar { width: 140px; height: 8px; background: #23324a; border-radius: 1px; overflow: hidden; }
-.r-bar div { height: 100%; background: #5fe39a; transition: width .1s linear; }
-.r-bar div.low { background: var(--r-bad); }
-
-.r-flash {
-  position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
-  font-family: var(--display); font-size: 30px; font-weight: 700; letter-spacing: 0.01em;
-  color: #fff; text-shadow: 0 2px 16px rgba(0, 0, 0, .8); pointer-events: none; z-index: 6; text-align: center; max-width: 90%;
-}
-.r-tip {
-  position: absolute; left: 50%; transform: translateX(-50%); top: 140px;
-  background: var(--space-panel); border: 1px solid var(--space-line); border-radius: 8px;
-  padding: 10px 16px; font-size: 16px; text-align: center; max-width: min(560px, 92%);
-  pointer-events: none; z-index: 6; color: var(--space-text);
-}
-.r-tip kbd { font-family: inherit; font-weight: 700; border: 1px solid var(--space-line); border-radius: 4px; padding: 0 6px; }
+/* the flight HUD lives in flighthud.css */
 
 @media (max-width: 700px) {
   .runner-top { padding: 0 10px; gap: 8px; height: 48px; }
@@ -160,14 +106,6 @@
   .runner-top .logo small { display: none; }
   .runner .link { padding: 6px; font-size: 14px; }
   .runner .link .label { display: none; }
-  .r-hud { gap: 6px; padding: 8px; }
-  .r-hud > * { padding: 5px 8px; }
-  .r-goal b { font-size: 24px; }
-  .r-orbit { min-width: 0; flex: 1 1 100%; margin-left: 0; }
-  .r-bar { width: 80px; }
-  .r-chip { font-size: 13px; }
-  .r-flash { font-size: 24px; }
-  .r-tip { font-size: 14px; top: auto; bottom: 90px; }
 }
 @media (max-width: 420px) {
   .runner-top { gap: 4px; padding: 0 8px; }
@@ -176,7 +114,4 @@
   .runner .link { padding: 6px 1px; margin: 0 5px; font-size: 13px; }
   .runner .lang-toggle { margin-left: 4px; }
   .runner .lang-toggle button { padding: 3px 6px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .r-chip.storm.now { animation: none; }
 }

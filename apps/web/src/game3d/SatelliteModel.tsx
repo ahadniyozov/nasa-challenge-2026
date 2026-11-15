@@ -690,7 +690,7 @@ export function SatelliteModel({
             <mesh position={[0, -0.075, 0]}>
               <cylinderGeometry args={[0.11, 0.11, 0.15, 16]} />
               <meshStandardMaterial
-                color="#ffd23f"
+                color="#f2a93b"
                 emissive={isHi('camera') ? '#ff7a2f' : '#a67c00'}
                 emissiveIntensity={isHi('camera') ? 0.65 : 0.3}
                 metalness={0.35}
@@ -751,7 +751,7 @@ export function SatelliteModel({
       {safe && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <ringGeometry args={[shieldR * 0.95, shieldR * 1.04, 36]} />
-          <meshBasicMaterial color="#ffd23f" transparent opacity={0.75} side={THREE.DoubleSide} depthWrite={false} />
+          <meshBasicMaterial color="#f2a93b" transparent opacity={0.75} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
       )}
 

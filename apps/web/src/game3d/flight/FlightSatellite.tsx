@@ -93,15 +93,15 @@ export function FlightSatellite({ s, pos, photoAt, children }: { s: SimState; po
       <group ref={model}>{children}</group>
       <mesh ref={safe} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <torusGeometry args={[1.25, 0.05, 8, 48]} />
-        <meshBasicMaterial color="#ffd23f" />
+        <meshBasicMaterial color="#f2a93b" />
       </mesh>
       <mesh ref={shield} visible={false}>
         <sphereGeometry args={[1.05, 24, 16]} />
-        <meshBasicMaterial color="#4dd2ff" transparent opacity={0.12} depthWrite={false} />
+        <meshBasicMaterial color="#9fb6cc" transparent opacity={0.1} depthWrite={false} />
       </mesh>
       <mesh ref={contact} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <torusGeometry args={[0.95, 0.03, 6, 40]} />
-        <meshBasicMaterial color="#3ddc84" transparent />
+        <meshBasicMaterial color="#45d28a" transparent />
       </mesh>
       <sprite ref={flash} position={[0, -0.6, 0]} visible={false}>
         <spriteMaterial map={glowTexture()} color="#ffffff" transparent depthWrite={false} blending={THREE.AdditiveBlending} />

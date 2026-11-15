@@ -71,14 +71,17 @@ function Scene({ s, build, control, msgs, setHud, overlay, reachLabel }: {
       if (e.type === 'photo') photoAt.current = s.t;
       if (e.type === 'hit' || e.type === 'stormHit') hitAt.current = s.t;
     }
-    if (s.t - hudAt.current > 0.1 || s.ended) { hudAt.current = s.t; setHud(hudOf(s, msgs.current(s))); }
+    if (s.t - hudAt.current > 0.1 || s.ended) { hudAt.current = s.t; setHud(hudOf(s, msgs.entries(s))); }
 
-    // screen-wide flashes: white for a photo, red for a hit, orange during a solar storm
+    // edge glows instead of full-screen tints, so the flight stays readable:
+    // red for a hit, a short white frame for a photo, a slow amber pulse inside a solar storm
     const el = overlay.current;
     if (el) {
-      const hit = Math.max(0, 1 - (s.t - hitAt.current) / 0.4), photo = Math.max(0, 1 - (s.t - photoAt.current) / 0.18);
-      const storm = s.storm === 2 ? 0.14 + Math.sin(s.t * 9) * 0.05 : 0;
-      el.style.background = hit > 0 ? `rgba(255,40,40,${0.35 * hit})` : photo > 0 ? `rgba(255,255,255,${0.22 * photo})` : storm > 0 ? `rgba(255,140,30,${storm})` : 'transparent';
+      const hit = Math.max(0, 1 - (s.t - hitAt.current) / 0.5), photo = Math.max(0, 1 - (s.t - photoAt.current) / 0.22);
+      const storm = s.storm === 2 ? 0.32 + Math.sin(s.t * 4) * 0.12 : 0;
+      el.style.boxShadow = hit > 0 ? `inset 0 0 140px 30px rgba(239,91,82,${0.75 * hit})`
+        : photo > 0 ? `inset 0 0 90px 8px rgba(255,255,255,${0.4 * photo})`
+        : storm > 0 ? `inset 0 0 180px 40px rgba(242,169,59,${storm})` : 'none';
     }
   }, -1);
 
