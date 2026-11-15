@@ -87,13 +87,12 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
         <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'missions' || phase === 'resources' ? t('Mission Control') : phase === 'crew' ? t('Crew mode') : t(mission.title)}</small></div>
         <nav className="runner-links" aria-label={t('Menu')}>
           {!inSpace && phase !== 'career' && phase !== 'crew' && <button className="link" onClick={() => setPhase('career')}>{t('Home')}</button>}
-          {!inSpace && phase !== 'resources' && phase !== 'crew' && <button className="link" onClick={() => setPhase('resources')} title={t('NASA Resources')}>{t('Resources')}</button>}
           <SoundToggle />
           {/* in flight only the sound button: nothing that leaves the mission or restarts it by accident */}
           {!inSpace && links}
         </nav>
       </header>
-      {phase === 'career' && <Home stars={stars} onList={() => setPhase('missions')} onCrew={() => setPhase('crew')} />}
+      {phase === 'career' && <Home stars={stars} onList={() => setPhase('missions')} onCrew={() => setPhase('crew')} onCredits={() => setPhase('resources')} />}
       {phase === 'missions' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} globe={flight3d} onBack={() => setPhase('career')} />}
       {phase === 'crew' && <Suspense fallback={<div className="g2d-page" />}><CrewGame code={CREW_CODE} flight3d={flight3d} onSpace={setCrewSpace} onExit={() => { setCrewSpace(false); setPhase('career'); }} /></Suspense>}
       {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} onBack={() => setPhase('missions')} />}
@@ -157,7 +156,7 @@ function ModeArt({ crew }: { crew: boolean }) {
 
 // ---------------------------------------------------------------------------
 /** The home screen: two ways to play. */
-function Home({ stars, onList, onCrew }: { stars: Record<string, number>; onList(): void; onCrew(): void }) {
+function Home({ stars, onList, onCrew, onCredits }: { stars: Record<string, number>; onList(): void; onCrew(): void; onCredits(): void }) {
   const { t } = useT();
   const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
   return (
@@ -191,6 +190,11 @@ function Home({ stars, onList, onCrew }: { stars: Record<string, number>; onList
             </div>
           </section>
         </div>
+        {/* the sources, small and out of the way: the judges and the CC BY credits need it, players do not */}
+        <p className="g2d-credits">
+          {t('Built on NASA data: Blue Marble, Black Marble, CubeSat 101 and real mission photos.')}{' '}
+          <button className="g2d-mode-link" onClick={onCredits}>{t('NASA data & credits')}</button>
+        </p>
       </div>
     </div>
   );

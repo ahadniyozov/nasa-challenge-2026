@@ -1,4 +1,4 @@
-/* "In real life" cards and the NASA Resources screen (tokens in game2d/theme.css). */
+/* "In real life" cards and the "NASA data & credits" screen (tokens in game2d/theme.css). */
 .c-link { color: var(--orange-ink); text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
 .c-link:hover { color: var(--ink); }
 

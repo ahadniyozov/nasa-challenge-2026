@@ -22,7 +22,7 @@ packages/engine   Pure TypeScript mission model, shared by client and server
 apps/web          React + react-three-fiber client
   src/game2d/       the game: missions, satellite builder, flight rules (sim.ts), 2D flight, report
   src/game3d/       3D flight over the globe, sound
-  src/content/      "In real life" cards and the NASA Resources screen
+  src/content/      "In real life" cards and the "NASA data & credits" screen
 apps/server       Socket.io rooms for up to 4 players + authoritative leaderboard
 deploy            Dockerfile, docker-compose, Caddy (automatic HTTPS)
 ```
