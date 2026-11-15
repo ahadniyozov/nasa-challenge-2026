@@ -1,10 +1,10 @@
 # GO / NO-GO: Mission Control: Space Apps 2026 submission materials
 
-Challenge: **Space Mission Design Game**. Fill in the team name, the public game URL and the video link before submitting.
+Challenge: **Space Mission Design Game**. Fill in the team name, the public game URL and the demo (slides) link before submitting.
 
 - Team: _(team name)_ - _(members)_
 - Play: _(public URL)_
-- Video: _(link)_
+- Demo (slides): _(public link)_
 - Code: https://github.com/ahadniyozov/nasa-challenge-2026
 
 ---
@@ -52,6 +52,8 @@ All facts on the cards were checked against these pages on 2026-11-14. The game 
 
 ### References field (copy into the submission form as is)
 
+The form has separate fields for NASA data and for the use of AI. For **Use of Artificial Intelligence**: "Claude (Anthropic) was used as a coding assistant. Game design, mission content, testing and all decisions are by the team. No AI-generated images or video are used."
+
 The rules ask for every external resource, even free and open source ones.
 
 ```
@@ -79,24 +81,23 @@ Other resources
 - Earth textures (day, night, clouds, ocean mask; based on NASA imagery) by Solar System Scope, CC BY 4.0 - https://www.solarsystemscope.com/textures/
 - Open-source software: React, three.js, @react-three/fiber, @react-three/drei, zustand, socket.io, Vite, Vitest, TypeScript, tsx (all MIT or Apache-2.0)
 - Fonts: Barlow and Barlow Condensed via Google Fonts (SIL Open Font License)
-- AI assistance: Claude (Anthropic) was used as a coding assistant; all design decisions and testing by the team.
 ```
 
-## 4. Video script (about 60 seconds)
+## 4. Project demo: slide deck (7 slides)
 
-| Time | On screen | Voice-over / caption |
-|---|---|---|
-| 0-5 s | Home screen: "Solo missions" and "Crew mission" | "Can you design a satellite that actually works?" |
-| 5-11 s | Mission map with the globe; open "Hurricane watch" or "Wildfires", read the brief | "Every mission starts with a real customer and real requirements." |
-| 11-20 s | Build screen: pick camera, panels, orbit, rocket; the 3D satellite changes, gauges turn green or red | "Each choice costs mass, power or money, just like at NASA." |
-| 20-28 s | 3D launch: countdown, lift-off from the pad, staging, fairing, spacecraft separation | "Launch it..." |
-| 28-36 s | 3D flight over the Earth: change lanes, photograph targets, night side with city lights, downlink to a station | "...fly it over NASA's Blue Marble and send the data home." |
-| 36-42 s | A failed report: "Battery ran flat in Earth's shadow", the "Change: Battery" button | "When it fails, the game tells you why and what to change." |
-| 42-52 s | Crew mode: two or three screens side by side - lobby with a code, roles, everyone votes GO; in flight a console calls a warning | "Or play as a crew: four roles, one satellite, nothing flies until everyone says GO." |
-| 52-57 s | ★★★ report with the "In real life" card | "Then meet the real NASA mission that does the same job." |
-| 57-60 s | Title + URL | "GO / NO-GO: Mission Control. Free in your browser." |
+Rules (Space Apps project submission guide): the demo is required, either a video of at most 30 seconds or a deck of **at most 7 slides including the title slide**; over the limit means no Global Judging. The deck must be in English, hosted outside the Space Apps site (Google Slides, Google Drive PDF, GitHub), and open without a password or sign-in. Screenshots for the slides (2880x1620, phone 1170x2532): `docs/screens/`; `launch-ascent.jpg` and `crew-build.jpg` are spares.
 
-Recording tips: 1920x1080 (or 1280x720), sound on, `?all` to open all missions. For crew mode, open two browser windows side by side, or record a phone and a laptop together.
+| # | Slide | Picture | Text (short) |
+|---|---|---|---|
+| 1 | **GO / NO-GO: Mission Control** - title | `launch-pad.jpg` (lift-off at dusk) | Design a real satellite mission. Launch it. Fly it. Team name, Space Apps 2026, Space Mission Design Game. |
+| 2 | **The idea** | `home.jpg` | A customer needs a job done from orbit - find wildfires, watch hurricanes, map a city. You design the satellite, choose the orbit and the rocket, then fly the mission. Mission design is about trade-offs, and failing is the best teacher. |
+| 3 | **How you play** | strip: `missions.jpg` → `build.jpg` → `launch-orbit.jpg` → `flight.jpg` | Brief → build (each part costs mass, power, money) → launch → fly over the Earth → report. Six missions, six trade-offs: data link, Earth's shadow and power, inclination, geostationary orbit, radiation, budget. |
+| 4 | **Real physics, honest failures** | `report-fail.jpg` | A TypeScript engine computes orbital period, shadow share, ground-station passes, drag lifetime, power, data, mass and cost budgets. If the battery dies in the game, the energy budget really doesn't close. Every failure says why and which part to change. |
+| 5 | **Crew mode: mission control for 2-4** | `crew-lobby.jpg` + `crew-lobby-phone.jpg` or `crew-poll-phone.jpg` | Flight director, engineer, scientist, communications. Each owns part of the design, everyone votes GO, then they fly together from their own devices. Built for classrooms. |
+| 6 | **Built on NASA data** | `report-win.jpg` (the "In real life" card) | Blue Marble and Black Marble Earth; CubeSat 101 and NASA mission-design guides behind the rules; real hardware photos from the NASA Image Library; after each win, the real NASA mission that does the same job (FIRMS, ICESat-2, GOES, Van Allen Probes, Landsat 9). |
+| 7 | **Play it** | QR code to the game | Game URL, GitHub link. Browser, phone or laptop, free, no account. Tech: React, TypeScript, three.js, socket.io. |
+
+Tips: one idea per slide, big screenshots, little text (the long description is on the project page). Export as PDF too, in case the link host is down.
 
 ## 5. Testing checklist (after every merge)
 
