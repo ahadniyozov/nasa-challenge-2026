@@ -106,7 +106,7 @@ function bracketTexture() {
 const DEBRIS_KINDS = 3;
 /**
  * In Earth's shadow real debris is invisible to the eye, so the display does what tracking software does:
- * every tracked piece gets amber corner brackets, bright at night and faint in daylight.
+ * every tracked piece gets red corner brackets, strongest at night.
  */
 export function Debris({ s, tr }: { s: SimState; tr: Track }) {
   const refs = [useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null)];
@@ -129,13 +129,13 @@ export function Debris({ s, tr }: { s: SimState; tr: Track }) {
       q.setFromEuler(e.set(o.id + s.t * 0.9, o.id * 2.3 + s.t * 1.3, o.id * 0.7 + s.t * 0.4));
       const sc = 0.9 + (o.id % 4) * 0.12;
       im.setMatrixAt(n[kind]++, mtx.compose(v, q, scale.set(sc, sc, sc)));
-      if (mk && o.ahead > -0.05) mk.setMatrixAt(m++, mtx.compose(v, camera.quaternion, scale.setScalar(0.95)));
+      if (mk && o.ahead > -0.05) mk.setMatrixAt(m++, mtx.compose(v, camera.quaternion, scale.setScalar(0.68)));
     }
     refs.forEach((r, k) => { if (r.current) { r.current.count = n[k]; r.current.instanceMatrix.needsUpdate = true; } });
     if (mk) {
       mk.count = m;
       mk.instanceMatrix.needsUpdate = true;
-      (mk.material as THREE.MeshBasicMaterial).opacity = 0.28 + dark.current * 0.62;
+      (mk.material as THREE.MeshBasicMaterial).opacity = 0.5 + dark.current * 0.45;
     }
   });
   return (
@@ -151,7 +151,7 @@ export function Debris({ s, tr }: { s: SimState; tr: Track }) {
       </instancedMesh>
       <instancedMesh ref={marks} args={[undefined, undefined, JUNK * DEBRIS_KINDS]} frustumCulled={false} renderOrder={2}>
         <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial map={bracketTexture()} color="#ffa24d" transparent opacity={0.3} depthWrite={false} depthTest={false} />
+        <meshBasicMaterial map={bracketTexture()} color="#ff3b30" transparent opacity={0.45} depthWrite={false} depthTest={false} />
       </instancedMesh>
     </>
   );
