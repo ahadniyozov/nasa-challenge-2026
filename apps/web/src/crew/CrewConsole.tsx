@@ -73,7 +73,7 @@ export function CrewConsole({ c, crew, m, a, mine }: { c: CrewApi; crew: CrewSta
               {p.storms > 0 && (
                 <>
                   <div className="cc-row"><span>{t('Sun')}</span><b className={`cc-lamp ${s.storm === 2 ? 'storm now' : s.storm === 1 ? 'storm' : ''}`}>{s.storm === 2 ? t('Solar storm') : s.storm === 1 ? t('Solar storm ahead') : t('Quiet')}</b></div>
-                  <button className={`g2d-ghost cc-safe ${s.safe ? 'on' : ''}`} aria-pressed={s.safe} onClick={() => c.emit('crew:safe', { on: !s.safe })}>{t('Safe mode')}</button>
+                  <button className={`r-btn cc-safe ${s.safe ? 'on' : ''}`} aria-pressed={s.safe} onClick={() => c.emit('crew:safe', { on: !s.safe })}>{s.safe ? t('Safe mode on') : t('Safe mode')}</button>
                 </>
               )}
             </section>
@@ -99,7 +99,7 @@ export function CrewConsole({ c, crew, m, a, mine }: { c: CrewApi; crew: CrewSta
             <h3>{t('Call to the flight director')}</h3>
             <div className="cc-calls">
               {CALLS.filter((k) => !k.startsWith('safe')).map((k) => (
-                <button key={k} className="g2d-ghost small" onClick={() => c.emit('crew:call', { key: k })}>{t(CALL_TEXT[k])}</button>
+                <button key={k} className="r-btn cc-call" onClick={() => c.emit('crew:call', { key: k })}>{t(CALL_TEXT[k])}</button>
               ))}
             </div>
           </section>
