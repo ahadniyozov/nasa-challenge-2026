@@ -8,6 +8,7 @@ import type { SimState } from '../../game2d/sim';
 import { GROUND_ALT, laneX, trackPos, trackTilt, type Track } from './track';
 
 const POOL = 14;
+const CALM = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const v = new THREE.Vector3();
 
 /** A hurricane seen from orbit: hundreds of soft cloud puffs along spiral bands, a clear eye in the middle (drawn once). */
@@ -74,7 +75,7 @@ export function disposeTree(root: THREE.Object3D) {
 }
 
 /** fixed: materials whose opacity is base × fade; animate() drives the rest (and gets the same fade). */
-interface Look { group: THREE.Group; fixed: [THREE.Material, number][]; animate(t: number, seed: number, fade: number): void }
+interface Look { group: THREE.Group; fixed: [THREE.Material, number][]; animate(t: number, seed: number, fade: number): void; blink?: THREE.Material }
 
 /**
  * Builds one target of the given kind, centred on its ground point (y up). The look is what a camera in orbit
@@ -96,8 +97,10 @@ function buildLook(kind: TargetKind, hurricane: THREE.Texture | null): Look {
     const sp = new THREE.Sprite(m); sp.scale.setScalar(size); add(sp, 0, y, 0); return sp;
   };
   /** the imaging footprint: four thin corner brackets on the ground */
+  let blink: THREE.Material | undefined;
   const footprint = (color: string, half = 0.8) => {
-    const m = basic(color, 0.85);
+    const m = new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    blink = m;
     const arm = half * 0.38, w = 0.035;
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
       flat(new THREE.PlaneGeometry(arm, w), m, sx * (half - arm / 2), 0.03, sz * half);
@@ -109,7 +112,7 @@ function buildLook(kind: TargetKind, hurricane: THREE.Texture | null): Look {
     // the first photo: a plain site to image
     footprint('#e9edf1');
     const dot = sprite('#ffffff', 0.9, 0.35, 0.05);
-    return { group, fixed, animate: (t, k) => { dot.scale.setScalar(0.3 + Math.sin(t * 4 + k) * 0.06); } };
+    return { group, fixed, blink, animate: (t, k) => { dot.scale.setScalar(0.3 + Math.sin(t * 4 + k) * 0.06); } };
   }
   if (kind === 'fire') {
     // active fire: red-hot pixels on the ground and a smoke plume drifting downwind
@@ -124,7 +127,7 @@ function buildLook(kind: TargetKind, hurricane: THREE.Texture | null): Look {
       return add(new THREE.Sprite(m)) as THREE.Sprite;
     });
     return {
-      group, fixed, animate: (t, k, fade) => {
+      group, fixed, blink, animate: (t, k, fade) => {
         hot.forEach((h, i) => h.scale.setScalar(0.22 + Math.abs(Math.sin(t * 9 + i * 1.7 + k)) * 0.16));
         smoke.forEach((sp, i) => {
           const u = (t * 0.22 + i / smoke.length + k * 0.1) % 1;
@@ -145,7 +148,7 @@ function buildLook(kind: TargetKind, hurricane: THREE.Texture | null): Look {
       const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.05, bevelEnabled: false });
       return flat(geo, iceMat, x, 0.02, z);
     });
-    return { group, fixed, animate: (t, k) => bergs.forEach((b, i) => { b.rotation.z = k + i + t * 0.05; }) };
+    return { group, fixed, blink, animate: (t, k) => bergs.forEach((b, i) => { b.rotation.z = k + i + t * 0.05; }) };
   }
   if (kind === 'storm') {
     // a hurricane: a spiral of cloud with an eye, and its shadow on the sea
@@ -153,7 +156,7 @@ function buildLook(kind: TargetKind, hurricane: THREE.Texture | null): Look {
     const cloud = keep(new THREE.MeshBasicMaterial({ map: hurricane, transparent: true, depthWrite: false }), 1);
     const sh = flat(new THREE.CircleGeometry(1.7, 48), shadow, 0.12, 0.04, 0.1);
     const disc = flat(new THREE.CircleGeometry(1.7, 48), cloud, 0, 0.32, 0);
-    return { group, fixed, animate: (t, k) => { disc.rotation.z = k + t * 0.6; sh.rotation.z = disc.rotation.z; } };
+    return { group, fixed, blink, animate: (t, k) => { disc.rotation.z = k + t * 0.6; sh.rotation.z = disc.rotation.z; } };
   }
   if (kind === 'particle') {
     // a cloud of charged particles at the satellite's height, faintly glowing like an aurora
@@ -193,7 +196,7 @@ function buildLook(kind: TargetKind, hurricane: THREE.Texture | null): Look {
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   add(new THREE.Points(geo, keep(new THREE.PointsMaterial({ size: 0.075, map: glowTexture(), color: '#ffcf7a', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), 1)));
   sprite('#ffb85c', 0.3, 1.6, 0.05);
-  return { group, fixed, animate: () => undefined };
+  return { group, fixed, blink, animate: () => undefined };
 }
 
 export function Targets({ s, tr }: { s: SimState; tr: Track }) {
@@ -219,6 +222,13 @@ export function Targets({ s, tr }: { s: SimState; tr: Track }) {
       const opacity = o.lane < 0 ? 0.35 : Math.min(1, (2.0 - o.ahead) * 2.5); // fade in over the horizon
       for (const [m, base] of look.fixed) m.opacity = base * opacity;
       look.animate(s.t, o.id * 1.7, opacity);
+      // the brackets blink to draw the eye; faster once the target is close and on the satellite's lane
+      if (look.blink && CALM) look.blink.opacity = opacity * 0.85;
+      else if (look.blink) {
+        const close = o.lane === s.lane && o.ahead < 0.7;
+        const w = 0.5 + 0.5 * Math.cos(s.t * Math.PI * 2 * (close ? 3 : 1.4) + o.id);
+        look.blink.opacity = opacity * (0.2 + 0.8 * w);
+      }
     }
     for (let i = n; i < POOL; i++) pool[i].group.visible = false;
   });
