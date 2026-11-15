@@ -130,6 +130,30 @@ function Stars({ n, label }: { n: number; label: string }) {
   );
 }
 
+/** Line drawings for the two ways to play: one operator and a satellite, or four crew consoles linked to it. */
+function ModeArt({ crew }: { crew: boolean }) {
+  const sat = (
+    <g transform="translate(80 34)">
+      <rect x="-26" y="-5" width="18" height="10" className="wing" /><rect x="8" y="-5" width="18" height="10" className="wing" />
+      <rect x="-8" y="-9" width="16" height="18" rx="1.5" className="bus" />
+    </g>
+  );
+  const node = (x: number, y: number, k: number) => (
+    <g key={k} transform={`translate(${x} ${y})`}>
+      <line x1="0" y1="-9" x2={80 - x} y2={44 - y} className="link" />
+      <rect x="-11" y="-8" width="22" height="16" rx="2" className="console" />
+      <line x1="-6" y1="10" x2="6" y2="10" className="stand" />
+    </g>
+  );
+  return (
+    <svg className="g2d-mode-art" viewBox="0 0 160 110" aria-hidden="true">
+      <path d="M8 104 Q80 84 152 104" className="earth" />
+      {crew ? [node(26, 86, 0), node(62, 92, 1), node(98, 92, 2), node(134, 86, 3)] : node(80, 90, 0)}
+      {sat}
+    </svg>
+  );
+}
+
 // ---------------------------------------------------------------------------
 function Career({ stars, openAll, onOpenAll, onPick, globe, onCrew }: { stars: Record<string, number>; openAll: boolean; onOpenAll(): void; onPick(m: Mission): void; globe: boolean; onCrew(): void }) {
   const { t } = useT();
@@ -138,15 +162,40 @@ function Career({ stars, openAll, onOpenAll, onPick, globe, onCrew }: { stars: R
   const [activeId, setActiveId] = useState(() => (MISSIONS.find((m) => unlocked(m) && !(stars[m.id] ?? 0)) ?? MISSIONS[0]).id);
   const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
   const levelBars = { Cadet: 1, Engineer: 2, 'Flight Director': 3 } as const;
+  const next = MISSIONS.find((m) => unlocked(m) && !(stars[m.id] ?? 0)) ?? MISSIONS.filter(unlocked).at(-1) ?? MISSIONS[0];
   return (
     <div className="g2d-page">
       <div className="g2d-doc">
-        <h1>{t('Mission manifest')}</h1>
-        <p className="g2d-lead">{t('Six customers, six satellites. Each mission adds one new engineering problem. Earn a star to unlock the next one.')}</p>
-        <div className="g2d-crew-cta">
-          <div><b>{t('Crew mode')}</b><span>{t('2-4 players, each on their own phone or laptop: flight director, engineer, scientist and communications design one satellite together.')}</span></div>
-          <button className="g2d-ghost" onClick={onCrew}>{t('Play as a crew')}</button>
+        <h1>{t('Mission control')}</h1>
+        <p className="g2d-lead">{t('Design a real satellite for a real customer, launch it and fly it. Alone, or with a crew of up to four.')}</p>
+        <div className="g2d-modes">
+          <section className="g2d-mode">
+            <ModeArt crew={false} />
+            <div className="g2d-mode-text">
+              <span className="g2d-mode-tag">{t('1 player')}</span>
+              <h2>{t('Solo missions')}</h2>
+              <p>{t('You are the whole team: six customers, six satellites, from a student CubeSat to a city map.')}</p>
+              <p className="g2d-mode-meta">{t('Stars earned: {n} of {m}', { n: total, m: MISSIONS.length * 3 })}. <a className="g2d-mode-link" href="#manifest">{t('All missions')}</a></p>
+            </div>
+            <div className="g2d-mode-go">
+              <button className="r-btn" onClick={() => onPick(next)}>{total === 0 ? t('Start mission 1') : t('Continue: mission {n}', { n: next.num })}</button>
+            </div>
+          </section>
+          <section className="g2d-mode">
+            <ModeArt crew />
+            <div className="g2d-mode-text">
+              <span className="g2d-mode-tag">{t('2-4 players')}</span>
+              <h2>{t('Crew mission')}</h2>
+              <p>{t('Flight director, engineer, scientist and communications design one satellite together, each from their own phone or laptop. Nothing flies until everyone says GO.')}</p>
+              <p className="g2d-mode-meta">{t('Create a crew or join one with a code.')}</p>
+            </div>
+            <div className="g2d-mode-go">
+              <button className="r-btn" onClick={onCrew}>{t('Play as a crew')}</button>
+            </div>
+          </section>
         </div>
+        <h2 id="manifest" className="g2d-manifest-title">{t('Solo missions')}</h2>
+        <p className="g2d-lead small">{t('Six customers, six satellites. Each mission adds one new engineering problem. Earn a star to unlock the next one.')}</p>
         {globe && (
           <Fallback2D fallback={null}>
             <Suspense fallback={<div className="g3d-globe-wait" />}>
