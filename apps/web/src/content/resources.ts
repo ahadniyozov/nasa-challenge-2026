@@ -1,5 +1,5 @@
 // NASA resources and data used by the game, and where exactly they appear. Links checked 2026-11-14.
-// Texts are English keys for t(); Russian is in i18n/ru-content.ts.
+// Texts go through t() (i18n/index.ts).
 
 export interface Resource {
   emoji: string;

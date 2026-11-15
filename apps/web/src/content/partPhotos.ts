@@ -1,7 +1,7 @@
 // Real NASA photos of the hardware behind the game's parts (NASA Image and Video Library, images.nasa.gov).
 // NASA images are generally not copyrighted; we credit the source and do not imply NASA endorsement.
 // Photos were chosen without people in the frame (gloved hands only). Files: public/parts/*.webp (resized, cropped).
-// Texts are English keys for t(); Russian is in i18n/ru-ui.ts.
+// Texts go through t() (i18n/index.ts).
 
 export interface PartPhoto {
   file: string;

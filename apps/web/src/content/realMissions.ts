@@ -1,6 +1,6 @@
 // "In real life" cards: the real NASA mission that does the same job as each game mission.
 // Every fact was checked against the linked NASA page (checked 2026-11-14). Keep facts short and verifiable.
-// Texts are English keys for t(); Russian is in i18n/ru-content.ts.
+// Texts go through t() (i18n/index.ts).
 
 /** Which schematic to draw (no photos: just Earth and the orbit). */
 export type OrbitSketch = 'low' | 'polar' | 'geo' | 'belts';

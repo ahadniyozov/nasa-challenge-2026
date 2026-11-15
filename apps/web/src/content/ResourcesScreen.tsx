@@ -1,4 +1,4 @@
-// "NASA Resources" screen (from the top menu): which NASA resources and data the game uses, and where.
+// "NASA data & credits" screen (a link at the bottom of the home screen): which NASA resources and data the game uses, and where.
 import { useT } from '../i18n';
 import { RESOURCES, SPACE_APPS_URL } from './resources';
 import { PART_PHOTOS, sourceUrl } from './partPhotos';
@@ -8,8 +8,8 @@ export function ResourcesScreen({ onBack }: { onBack(): void }) {
   return (
     <div className="g2d-page">
       <div className="g2d-doc narrow c-res">
-        <button className="g2d-back" onClick={onBack}>{t('Back to missions')}</button>
-        <h1>{t('NASA Resources')}</h1>
+        <button className="g2d-back" onClick={onBack}>{t('Back')}</button>
+        <h1>{t('NASA data & credits')}</h1>
         <p className="g2d-lead">{t('Everything in this game is based on real NASA data, guides and missions. Here is what we used and where.')}</p>
         {RESOURCES.map((g) => (
           <section key={g.title}>

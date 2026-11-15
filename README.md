@@ -22,7 +22,7 @@ packages/engine   Pure TypeScript mission model, shared by client and server
 apps/web          React + react-three-fiber client
   src/game2d/       the game: missions, satellite builder, flight rules (sim.ts), 2D flight, report
   src/game3d/       3D flight over the globe, sound
-  src/content/      "In real life" cards and the NASA Resources screen
+  src/content/      "In real life" cards and the "NASA data & credits" screen
 apps/server       Socket.io rooms for up to 4 players + authoritative leaderboard
 deploy            Dockerfile, docker-compose, Caddy (automatic HTTPS)
 ```
@@ -78,13 +78,14 @@ Earth textures are NASA Blue Marble / Black Marble (public domain).
 
 ---
 
-## Для команды
+## For the team
 
-- **Движок** (`packages/engine`): формулы, баланс, сценарии, тесты. Любую цифру в игре меняем в `catalog.ts`.
-- **Игра** (`apps/web/src/game2d`): миссии, сборка, правила полёта (`sim.ts`), отчёт.
-- **3D** (`apps/web/src/game3d`): 3D-полёт над глобусом, звук.
-- **Сервер и деплой** (`apps/server`, `deploy`).
+- **Engine** (`packages/engine`): formulas, balance, scenarios, tests. Every number in the game lives in `catalog.ts`.
+- **Game** (`apps/web/src/game2d`): missions, the build screen, flight rules (`sim.ts`), the report.
+- **3D** (`apps/web/src/game3d`): launch, 3D flight over the globe, sound.
+- **Crew mode** (`apps/web/src/crew`, `apps/server`): multiplayer mission control over socket.io.
+- **Server and deploy** (`apps/server`, `deploy`).
 
-Правило: игровая логика живёт только в `engine`, а клиент и сервер её только вызывают.
+Rule: game logic lives only in `engine`; the client and the server only call it.
 
-**Русский язык — временный.** Весь перевод лежит в `apps/web/src/i18n/`, переключатель RU/EN — справа в верхней панели. Новые строки в UI оборачивайте в `t('English text')` и добавляйте перевод в `ru-*.ts`. Перед сабмитом: удалить `ru*.ts` и `i18n/LangToggle.tsx`, а в `i18n/index.ts` оставить только английскую ветку.
+UI text is English only. Write new strings as `t('English text')` (see `apps/web/src/i18n/index.ts`), so a translation can be added later in one place.
