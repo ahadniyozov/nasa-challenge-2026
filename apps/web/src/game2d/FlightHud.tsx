@@ -135,9 +135,13 @@ export function FlightHud({ p, m, hud, control }: { p: FlightParams; m: Mission;
         </div>
       )}
       <div className="g2d-touch">
-        <button onPointerDown={() => tap(-1)} aria-label={t('Move left')}>‹</button>
-        {p.storms > 0 && <button className={`safe ${hud.safe ? 'on' : ''}`} onPointerDown={() => { control.current.safe = !control.current.safe; }} aria-pressed={hud.safe}>{t('Safe mode')}</button>}
-        <button onPointerDown={() => tap(1)} aria-label={t('Move right')}>›</button>
+        <button className="lane left" onPointerDown={() => tap(-1)} aria-label={t('Move left')}><span className="key"><Chevron dir={-1} /></span></button>
+        {p.storms > 0 && (
+          <button className={`safe ${hud.safe ? 'on' : ''}`} onPointerDown={() => { control.current.safe = !control.current.safe; }} aria-pressed={hud.safe}>
+            <span className="lamp" aria-hidden="true" />{t('Safe mode')}{!TOUCH && <kbd>{t('Space')}</kbd>}
+          </button>
+        )}
+        <button className="lane right" onPointerDown={() => tap(1)} aria-label={t('Move right')}><span className="key"><Chevron dir={1} /></span></button>
       </div>
     </>
   );
@@ -154,3 +158,11 @@ const TIPS: Record<TargetKind, string> = {
   particle: 'Fly through particle clouds to measure them, then over a ground station to send the data home.',
   city: 'Fly over cities to photograph them, then over a ground station to send the photos home.',
 };
+
+function Chevron({ dir }: { dir: -1 | 1 }) {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d={dir < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

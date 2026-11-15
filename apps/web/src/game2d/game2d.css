@@ -3,14 +3,35 @@
 
 /* touch areas over the flight: left half / right half */
 .g2d-touch { position: absolute; inset: 64px 0 56px 0; display: flex; flex-direction: row; z-index: 4; }
-.g2d-touch button { flex: 1; background: transparent; border: 0; color: transparent; font-size: 34px; cursor: pointer; }
-@media (hover: none) { .g2d-touch button { color: rgba(233, 237, 241, .35); } }
-.g2d-touch button.safe {
-  position: absolute; right: 16px; bottom: 14px; width: auto; height: 52px; flex: none; padding: 0 18px;
-  border-radius: 6px; background: var(--space-panel); border: 1px solid #b8962f; color: #f2c463;
-  font-size: 16px; font-weight: 700;
+/* each half of the screen is a lane button; on touch screens a small key shows where to tap */
+.g2d-touch .lane { flex: 1; display: flex; align-items: flex-end; padding: 0 16px 76px; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.g2d-touch .lane.right { justify-content: flex-end; }
+.g2d-touch .lane .key {
+  display: none; width: 52px; height: 52px; place-items: center; border-radius: 50%;
+  background: var(--space-panel); border: 1px solid var(--space-line); color: var(--space-text);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
-.g2d-touch button.safe.on { background: #f2c463; color: var(--space); }
+.g2d-touch .lane:active .key { background: #1d2c40; border-color: var(--space-text); }
+@media (hover: none) { .g2d-touch .lane .key { display: grid; } }
+/* the lane keys sit above the Safe mode switch */
+.g2d-touch:has(.safe) .lane { padding-bottom: 88px; }
+
+/* safe mode: a console switch with a status lamp; amber when on */
+.g2d-touch button.safe {
+  position: absolute; right: 16px; bottom: 16px; flex: none; z-index: 1;
+  display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px 0 12px;
+  border-radius: 6px; cursor: pointer; font: 600 16px 'Barlow', sans-serif; color: var(--space-text);
+  background: var(--space-panel); border: 1px solid rgba(242, 196, 99, .55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 2px 0 rgba(0, 0, 0, .45);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.g2d-touch button.safe .lamp { width: 10px; height: 10px; border-radius: 50%; background: #3a3424; box-shadow: inset 0 0 0 1px rgba(242, 196, 99, .5); }
+.g2d-touch button.safe kbd { font: 600 12px 'Barlow', sans-serif; color: var(--space-dim); border: 1px solid var(--space-line); border-radius: 4px; padding: 1px 6px; }
+.g2d-touch button.safe:hover { border-color: #f2c463; }
+.g2d-touch button.safe:active { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
+.g2d-touch button.safe.on { background: #f2c463; border-color: #f2c463; color: #1d1a10; }
+.g2d-touch button.safe.on .lamp { background: #fff6d8; box-shadow: 0 0 8px 2px rgba(255, 220, 120, .9); }
+.g2d-touch button.safe.on kbd { color: #4a4024; border-color: rgba(29, 26, 16, .35); }
 
 /* ---- page frame for the document screens */
 .g2d-page { flex: 1; overflow-y: auto; padding: 40px 24px 56px; background: var(--paper); }
@@ -85,11 +106,7 @@
 .g2d-findings { list-style: none; margin: 0; padding: 0; }
 .g2d-findings li { display: flex; gap: 20px; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--rule); }
 .g2d-findings li span { max-width: 62ch; }
-.g2d-findings button {
-  flex: none; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 6px;
-  padding: 8px 14px; font-weight: 600; font-size: 15px; cursor: pointer; white-space: nowrap;
-}
-.g2d-findings button:hover { border-color: var(--ink); }
+.g2d-findings button { flex: none; white-space: nowrap; }
 .g2d-later { color: var(--steel); font-size: 14px; white-space: nowrap; }
 
 /* ---- build: drawing, subsystems, margins */

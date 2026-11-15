@@ -315,7 +315,7 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
                   <span>{t(l.text, l.params)}</span>
                   {l.locked
                     ? <small className="g2d-later">{t('You can change this on later missions.')}</small>
-                    : <button onClick={() => onFix(l.slot)}>{t('Change {s}', { s: slotTitle(l.slot).toLowerCase() })}</button>}
+                    : <button className="g2d-ghost small" onClick={() => onFix(l.slot)}>{t('Change {s}', { s: slotTitle(l.slot).toLowerCase() })}</button>}
                 </li>
               ))}
             </ul>
