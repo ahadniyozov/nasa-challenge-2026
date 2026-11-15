@@ -20,7 +20,7 @@ const DASH_STEP = 0.16; // seconds between dashes
 const DASH_FROM = -0.9, DASH_TO = 1.6;
 const DASHES = Math.ceil((DASH_TO - DASH_FROM) / DASH_STEP);
 
-function Dashes({ s, tr, xs, color, opacity, alt }: { s: SimState; tr: Track; xs: number[]; color: string; opacity: number; alt: number }) {
+function Dashes({ s, tr, xs, color, opacity, alt, width = 0.07, fill = 0.45 }: { s: SimState; tr: Track; xs: number[]; color: string; opacity: number; alt: number; width?: number; fill?: number }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   useFrame(() => {
     const im = ref.current;
@@ -37,44 +37,88 @@ function Dashes({ s, tr, xs, color, opacity, alt }: { s: SimState; tr: Track; xs
   });
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, xs.length * DASHES]} frustumCulled={false}>
-      <boxGeometry args={[0.07, 0.02, DASH_STEP * tr.V * 0.45]} />
-      <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} />
+      <boxGeometry args={[width, 0.004, DASH_STEP * tr.V * fill]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} blending={THREE.AdditiveBlending} />
     </instancedMesh>
   );
 }
 
+/**
+ * The three possible ground tracks, drawn on the Earth like a mission-planning display: thin, faint, almost continuous.
+ * Under the satellite a small nadir ring marks the point it is looking straight down at.
+ */
 export function Lanes({ s, tr }: { s: SimState; tr: Track }) {
+  const nadir = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    if (nadir.current) nadir.current.position.set((s.laneY - 1) * GAP, GROUND_ALT + 0.03, 0);
+  });
   return (
     <>
-      <Dashes s={s} tr={tr} xs={[-GAP, 0, GAP]} color="#9fb3c8" opacity={0.32} alt={SAT_ALT - 0.35} />
-      {!s.p.reachesTargets && <Dashes s={s} tr={tr} xs={[REACH_X]} color="#ff5a5a" opacity={0.9} alt={GROUND_ALT + 0.02} />}
+      <Dashes s={s} tr={tr} xs={[-GAP, 0, GAP]} color="#bfe0ff" opacity={0.13} alt={GROUND_ALT + 0.02} width={0.03} fill={0.9} />
+      {!s.p.reachesTargets && <Dashes s={s} tr={tr} xs={[REACH_X]} color="#ff6b5e" opacity={0.75} alt={GROUND_ALT + 0.02} width={0.045} fill={0.55} />}
+      <mesh ref={nadir} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.2, 0.235, 40]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.55} depthWrite={false} />
+      </mesh>
     </>
   );
 }
 
-// ---- space junk
+// ---- space junk: what orbital debris really is - torn foil and panel pieces, bits of spent stages, metal shards.
+// Three instanced shapes, picked by the object's id; each tumbles slowly and catches the sunlight.
 const JUNK = 24;
+
+/** an irregular shard: a squashed icosahedron with its corners pushed in and out */
+function shardGeometry() {
+  const g = new THREE.IcosahedronGeometry(0.3, 1);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const k = 0.7 + ((Math.sin(i * 12.9898) * 43758.5453) % 1 + 1) % 1 * 0.6;
+    p.setXYZ(i, p.getX(i) * k * 1.3, p.getY(i) * k * 0.45, p.getZ(i) * k);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+/** a torn solar-panel fragment, slightly bent */
+function panelGeometry() {
+  const g = new THREE.BoxGeometry(0.62, 0.025, 0.36, 6, 1, 3);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i); p.setY(i, p.getY(i) + x * x * 0.35 - Math.max(0, x - 0.15) * 0.25); }
+  g.computeVertexNormals();
+  return g;
+}
+
+const DEBRIS_KINDS = 3;
 export function Debris({ s, tr }: { s: SimState; tr: Track }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
+  const refs = [useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null)];
+  const geos = useMemo(() => [shardGeometry(), panelGeometry(), new THREE.CylinderGeometry(0.13, 0.13, 0.55, 14, 1, true)], []);
+  useEffect(() => () => geos.forEach((g) => g.dispose()), [geos]);
   useFrame(() => {
-    const im = ref.current;
-    if (!im) return;
-    let n = 0;
+    const n = [0, 0, 0];
     for (const o of s.objects) {
-      if (o.kind !== 'debris' || o.done || n >= JUNK) continue;
+      if (o.kind !== 'debris' || o.done) continue;
+      const kind = o.id % DEBRIS_KINDS;
+      const im = refs[kind].current;
+      if (!im || n[kind] >= JUNK) continue;
       trackPos(tr, o.ahead, laneX(o.lane), SAT_ALT, v);
-      q.setFromEuler(e.set(o.id + s.t * 1.7, o.id * 2.3 + s.t * 2.3, o.id));
-      const sc = 0.8 + (o.id % 3) * 0.2;
-      im.setMatrixAt(n++, mtx.compose(v, q, scale.set(sc, sc * 0.7, sc)));
+      q.setFromEuler(e.set(o.id + s.t * 0.9, o.id * 2.3 + s.t * 1.3, o.id * 0.7 + s.t * 0.4));
+      const sc = 0.9 + (o.id % 4) * 0.12;
+      im.setMatrixAt(n[kind]++, mtx.compose(v, q, scale.set(sc, sc, sc)));
     }
-    im.count = n;
-    im.instanceMatrix.needsUpdate = true;
+    refs.forEach((r, k) => { if (r.current) { r.current.count = n[k]; r.current.instanceMatrix.needsUpdate = true; } });
   });
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, JUNK]} frustumCulled={false}>
-      <dodecahedronGeometry args={[0.36, 0]} />
-      <meshStandardMaterial color="#9aa1ad" metalness={0.6} roughness={0.45} flatShading />
-    </instancedMesh>
+    <>
+      <instancedMesh ref={refs[0]} args={[geos[0], undefined, JUNK]} frustumCulled={false}>
+        <meshStandardMaterial color="#7d8288" metalness={0.85} roughness={0.38} />
+      </instancedMesh>
+      <instancedMesh ref={refs[1]} args={[geos[1], undefined, JUNK]} frustumCulled={false}>
+        <meshStandardMaterial color="#1f2f52" metalness={0.5} roughness={0.25} emissive="#0b1428" side={THREE.DoubleSide} />
+      </instancedMesh>
+      <instancedMesh ref={refs[2]} args={[geos[2], undefined, JUNK]} frustumCulled={false}>
+        <meshStandardMaterial color="#c7a24a" metalness={0.7} roughness={0.32} side={THREE.DoubleSide} />
+      </instancedMesh>
+    </>
   );
 }
 
@@ -91,11 +135,11 @@ function dishGroup() {
   const dish = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), new THREE.MeshStandardMaterial({ color: '#eef2f8', side: THREE.DoubleSide, roughness: 0.35 }));
   dish.rotation.x = Math.PI; dish.position.y = 0.95;
   const tilt = new THREE.Group(); tilt.add(dish); tilt.rotation.z = 0.5; g.add(tilt);
-  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ color: '#3ddc84' })); lamp.position.set(-0.2, 0.75, 0); g.add(lamp);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshBasicMaterial({ color: '#7deaa9' })); lamp.position.set(-0.2, 0.75, 0); g.add(lamp);
   // radio reach at flight height: a glowing green circle over the track, as wide as the sim's contact window
   const reach = new THREE.Group(); reach.name = 'reach';
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshBasicMaterial({ color: '#3ddc84', transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide }));
-  const edge = new THREE.Mesh(new THREE.RingGeometry(0.96, 1, 48), new THREE.MeshBasicMaterial({ color: '#3ddc84', transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide }));
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshBasicMaterial({ color: '#45d28a', transparent: true, opacity: 0.045, depthWrite: false, side: THREE.DoubleSide }));
+  const edge = new THREE.Mesh(new THREE.RingGeometry(0.985, 1, 96), new THREE.MeshBasicMaterial({ color: '#7deaa9', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
   disc.rotation.x = edge.rotation.x = -Math.PI / 2;
   reach.add(disc, edge); g.add(reach);
   return g;
@@ -158,12 +202,12 @@ export function Stations({ s, tr, satPos }: { s: SimState; tr: Track; satPos: TH
     <>
       {pool.map((g, i) => <primitive key={i} object={g} />)}
       <mesh ref={beam} visible={false}>
-        <cylinderGeometry args={[0.05, 0.12, 1, 8, 1, true]} />
-        <meshBasicMaterial color="#3ddc84" transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <cylinderGeometry args={[0.012, 0.03, 1, 8, 1, true]} />
+        <meshBasicMaterial color="#7deaa9" transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       <instancedMesh ref={packets} args={[undefined, undefined, PACKETS]} frustumCulled={false}>
-        <boxGeometry args={[0.16, 0.16, 0.16]} />
-        <meshBasicMaterial color="#5dff9d" />
+        <sphereGeometry args={[0.045, 8, 6]} />
+        <meshBasicMaterial color="#b8ffd6" />
       </instancedMesh>
     </>
   );
@@ -197,7 +241,7 @@ export function StormSparks({ s }: { s: SimState }) {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[pos, 3]} />
       </bufferGeometry>
-      <pointsMaterial map={glowTexture()} color="#ffa040" size={0.45} transparent depthWrite={false} blending={THREE.AdditiveBlending} sizeAttenuation />
+      <pointsMaterial map={glowTexture()} color="#ffc27a" size={0.22} transparent opacity={0.8} depthWrite={false} blending={THREE.AdditiveBlending} sizeAttenuation />
     </points>
   );
 }

@@ -25,6 +25,11 @@ export const RESOURCES: ResourceGroup[] = [
         where: 'The city lights you see when the satellite flies through Earth\'s shadow.',
         url: 'https://www.earthdata.nasa.gov/data/projects/black-marble',
       },
+      {
+        emoji: '☁️', title: 'Earth textures by Solar System Scope (CC BY 4.0)',
+        where: 'The 8K versions of the NASA day map, night lights, clouds and ocean mask used for the globe in flight.',
+        url: 'https://www.solarsystemscope.com/textures/',
+      },
     ],
   },
   {

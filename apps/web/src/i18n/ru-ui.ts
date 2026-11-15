@@ -54,6 +54,8 @@ export const RU_UI: Record<string, string> = {
   'Fly over cities to photograph them, then over a ground station to send the photos home.': 'Пролетай над городами, потом над наземной станцией, чтобы отправить снимки домой.',
   // launch
   'Spacecraft separation. In orbit': 'Отделение спутника. Он на орбите', '{rocket} rocket to {km} km': 'Ракета «{rocket}» на высоту {km} км',
+  'Earth textures by Solar System Scope (CC BY 4.0)': 'Текстуры Земли от Solar System Scope (CC BY 4.0)',
+  'The 8K versions of the NASA day map, night lights, clouds and ocean mask used for the globe in flight.': 'Версии 8K дневной карты NASA, ночных огней, облаков и маски океанов для глобуса в полёте.',
   // 3D launch
   Liftoff: 'Старт', 'Stage separation': 'Отделение ступени', 'Fairing separation': 'Сброс обтекателя', 'Spacecraft separation': 'Отделение спутника',
   Altitude: 'Высота', Speed: 'Скорость', 'km/h': 'км/ч', 'Launch events': 'События запуска',

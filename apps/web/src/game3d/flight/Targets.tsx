@@ -1,4 +1,4 @@
-// Mission targets on the ground, one look per Mission.targets.kind, built from simple meshes.
+// Mission targets, one look per Mission.targets.kind, as a camera in orbit would see them (no toy shapes).
 // A fixed pool of target groups is re-used every frame (no meshes are created while flying).
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
@@ -10,22 +10,33 @@ import { GROUND_ALT, laneX, trackPos, trackTilt, type Track } from './track';
 const POOL = 14;
 const v = new THREE.Vector3();
 
-/** A canvas texture of a two-armed hurricane spiral (drawn once). */
-function spiralTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
+/** A hurricane seen from orbit: hundreds of soft cloud puffs along spiral bands, a clear eye in the middle (drawn once). */
+function hurricaneTexture() {
+  const N = 256, c = document.createElement('canvas');
+  c.width = c.height = N;
   const g = c.getContext('2d')!;
-  g.translate(64, 64);
-  const glow = g.createRadialGradient(0, 0, 4, 0, 0, 62);
-  glow.addColorStop(0, 'rgba(255,255,255,0.95)'); glow.addColorStop(0.5, 'rgba(220,235,255,0.45)'); glow.addColorStop(1, 'rgba(220,235,255,0)');
-  g.fillStyle = glow; g.beginPath(); g.arc(0, 0, 62, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 9; g.lineCap = 'round';
-  for (let arm = 0; arm < 2; arm++) {
-    g.beginPath();
-    for (let i = 0; i <= 40; i++) { const a = arm * Math.PI + i * 0.13, r = 6 + i * 1.3; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
-    g.stroke();
+  g.translate(N / 2, N / 2);
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const puff = (x: number, y: number, r: number, a: number) => {
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, `rgba(255,255,255,${a})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  };
+  // dense central dense overcast, then four spiral rain bands (counter-clockwise, as in the northern hemisphere)
+  for (let i = 0; i < 260; i++) { const a = rnd() * Math.PI * 2, r = 14 + Math.sqrt(rnd()) * 46; puff(Math.cos(a) * r, Math.sin(a) * r, 10 + rnd() * 12, 0.16); }
+  for (let arm = 0; arm < 4; arm++) {
+    for (let i = 0; i < 120; i++) {
+      const u = i / 120, a = arm * (Math.PI / 2) - u * 5.2, r = 30 + u * 92;
+      const j = (rnd() - 0.5) * (8 + u * 26);
+      puff(Math.cos(a) * (r + j), Math.sin(a) * (r + j), 5 + rnd() * 9 * (1 - u * 0.5), 0.13 * (1 - u * 0.7));
+    }
   }
-  g.fillStyle = '#4a7fd0'; g.beginPath(); g.arc(0, 0, 6, 0, Math.PI * 2); g.fill();
+  // the eye
+  g.globalCompositeOperation = 'destination-out';
+  const eye = g.createRadialGradient(0, 0, 0, 0, 0, 13);
+  eye.addColorStop(0, 'rgba(0,0,0,1)'); eye.addColorStop(0.6, 'rgba(0,0,0,0.8)'); eye.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = eye; g.beginPath(); g.arc(0, 0, 13, 0, Math.PI * 2); g.fill();
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -62,79 +73,134 @@ export function disposeTree(root: THREE.Object3D) {
   });
 }
 
-interface Look { group: THREE.Group; mats: THREE.Material[]; animate(t: number, seed: number): void }
+/** fixed: materials whose opacity is base × fade; animate() drives the rest (and gets the same fade). */
+interface Look { group: THREE.Group; fixed: [THREE.Material, number][]; animate(t: number, seed: number, fade: number): void }
 
-/** Builds one target of the given kind (all parts centred on the ground point, y up). */
-function buildLook(kind: TargetKind, spiral: THREE.Texture | null): Look {
+/**
+ * Builds one target of the given kind, centred on its ground point (y up). The look is what a camera in orbit
+ * would see: an imaging footprint (corner brackets) over the site, and the phenomenon itself, kept small and soft.
+ */
+function buildLook(kind: TargetKind, hurricane: THREE.Texture | null): Look {
   const group = new THREE.Group();
-  const mats: THREE.Material[] = [];
-  const std = (color: string, emissive = '#000000', ei = 0) => {
-    const m = new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: ei, roughness: 0.6, flatShading: true, transparent: true });
-    mats.push(m); return m;
+  const fixed: [THREE.Material, number][] = [];
+  const keep = <M extends THREE.Material>(m: M, base: number) => { fixed.push([m, base]); return m; };
+  const add = (o: THREE.Object3D, x = 0, y = 0, z = 0) => { o.position.set(x, y, z); group.add(o); return o; };
+  const flat = (geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0.03, z = 0) => {
+    const m = add(new THREE.Mesh(geo, mat), x, y, z) as THREE.Mesh; m.rotation.x = -Math.PI / 2; return m;
   };
-  const glow = (color: string, size: number, y = 0.2) => {
-    const m = new THREE.SpriteMaterial({ map: glowTexture(), color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-    mats.push(m);
-    const sp = new THREE.Sprite(m); sp.scale.setScalar(size); sp.position.y = y; group.add(sp); return sp;
+  const basic = (color: string, base: number, additive = false) => keep(new THREE.MeshBasicMaterial({
+    color, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+  }), base);
+  const sprite = (color: string, base: number, size: number, y: number, additive = true) => {
+    const m = keep(new THREE.SpriteMaterial({ map: glowTexture(), color, transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending }), base);
+    const sp = new THREE.Sprite(m); sp.scale.setScalar(size); add(sp, 0, y, 0); return sp;
   };
-  const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 0) => {
-    const mesh = new THREE.Mesh(geo, mat); mesh.position.set(x, y, z); group.add(mesh); return mesh;
+  /** the imaging footprint: four thin corner brackets on the ground */
+  const footprint = (color: string, half = 0.8) => {
+    const m = basic(color, 0.85);
+    const arm = half * 0.38, w = 0.035;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      flat(new THREE.PlaneGeometry(arm, w), m, sx * (half - arm / 2), 0.03, sz * half);
+      flat(new THREE.PlaneGeometry(w, arm), m, sx * half, 0.03, sz * (half - arm / 2));
+    }
   };
 
-  if (kind === 'fire') {
-    glow('#ff8a1f', 2.2, 0.35);
-    const flames = [[0, 0, 0, 0.9], [0.32, 0, 0.15, 0.6], [-0.3, 0, -0.1, 0.65], [0.05, 0, -0.32, 0.5]].map(([x, , z, h]) =>
-      add(new THREE.ConeGeometry(0.2 * (h + 0.3), h, 6), std('#ff5a1f', '#ff3d00', 1.6), x, h / 2, z));
-    const cores = flames.map((f) => add(new THREE.ConeGeometry(0.1, (f.geometry as THREE.ConeGeometry).parameters.height * 0.6, 5), std('#ffd23f', '#ffb300', 2), f.position.x, f.position.y * 0.7, f.position.z));
-    return { group, mats, animate: (t, k) => flames.forEach((f, i) => { const s = 1 + Math.sin(t * 15 + i * 2 + k) * 0.15; f.scale.set(1, s, 1); cores[i].scale.set(1, s * 1.1, 1); }) };
-  }
   if (kind === 'star') {
-    glow('#ffe066', 1.8, 0.7);
-    const star = add(new THREE.OctahedronGeometry(0.42, 0), std('#ffe066', '#ffcc00', 1.4), 0, 0.7, 0);
-    star.scale.set(1, 1.4, 1);
-    return { group, mats, animate: (t, k) => { star.rotation.y = t * 2 + k; } };
+    // the first photo: a plain site to image
+    footprint('#e9edf1');
+    const dot = sprite('#ffffff', 0.9, 0.35, 0.05);
+    return { group, fixed, animate: (t, k) => { dot.scale.setScalar(0.3 + Math.sin(t * 4 + k) * 0.06); } };
   }
-  if (kind === 'ice') {
-    glow('#5fe3ff', 1.8, 0.3);
-    const geo = new THREE.IcosahedronGeometry(0.55, 0);
-    const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) pos.setY(i, Math.max(0, pos.getY(i)) * 1.5); // flat bottom, tall top
-    geo.computeVertexNormals();
-    const berg = add(geo, std('#7fe9ff', '#2fbfe0', 0.35));
-    add(new THREE.ConeGeometry(0.22, 0.5, 4), std('#ffffff', '#bff6ff', 0.4), 0.15, 0.85, 0.05);
-    return { group, mats, animate: (t, k) => { berg.rotation.y = k; group.position.y += Math.sin(t * 2 + k) * 0.002; } };
-  }
-  if (kind === 'storm') {
-    const m = new THREE.MeshBasicMaterial({ map: spiral, transparent: true, depthWrite: false, side: THREE.DoubleSide });
-    mats.push(m);
-    const disc = add(new THREE.CircleGeometry(1.1, 32), m, 0, 0.12, 0);
-    disc.rotation.x = -Math.PI / 2;
-    return { group, mats, animate: (t, k) => { disc.rotation.z = t * 3 + k; } };
-  }
-  if (kind === 'particle') {
-    glow('#b878ff', 2.4, 0.6);
-    add(new THREE.IcosahedronGeometry(0.28, 1), std('#d9b8ff', '#9a55ff', 1.5), 0, 0.6, 0);
-    const dots = Array.from({ length: 7 }, () => add(new THREE.SphereGeometry(0.07, 6, 4), std('#f1e4ff', '#c79bff', 2), 0, 0.6, 0));
+  if (kind === 'fire') {
+    // active fire: red-hot pixels on the ground and a smoke plume drifting downwind
+    footprint('#ff7a45');
+    const hot = Array.from({ length: 6 }, (_, i) => {
+      const sp = sprite(i % 2 ? '#ff4a12' : '#ffb03a', 1, 0.3, 0.05);
+      sp.position.set(Math.cos(i * 2.4) * 0.28 * (i % 3), 0.05, Math.sin(i * 2.4) * 0.22 * (i % 3));
+      return sp;
+    });
+    const smoke = Array.from({ length: 9 }, () => {
+      const m = new THREE.SpriteMaterial({ map: glowTexture(), color: '#8f8a84', transparent: true, depthWrite: false });
+      return add(new THREE.Sprite(m)) as THREE.Sprite;
+    });
     return {
-      group, mats, animate: (t, k) => dots.forEach((d, i) => {
-        const a = k + t * 2.2 + i * 0.9;
-        d.position.set(Math.cos(a) * 0.55, 0.6 + Math.sin(a * 1.3) * 0.35, Math.sin(a) * 0.55);
-      }),
+      group, fixed, animate: (t, k, fade) => {
+        hot.forEach((h, i) => h.scale.setScalar(0.22 + Math.abs(Math.sin(t * 9 + i * 1.7 + k)) * 0.16));
+        smoke.forEach((sp, i) => {
+          const u = (t * 0.22 + i / smoke.length + k * 0.1) % 1;
+          sp.position.set(0.1 + u * 1.1, 0.12 + u * 1.3, -u * 0.35);
+          sp.scale.setScalar(0.35 + u * 1.5);
+          (sp.material as THREE.SpriteMaterial).opacity = Math.sin(u * Math.PI) * 0.5 * fade;
+        });
+      },
     };
   }
-  // city: a cluster of towers with lit windows
-  glow('#ffd88a', 2.0, 0.2);
-  const towers: [number, number, number][] = [[-0.35, 0.5, 0.1], [-0.05, 0.85, -0.1], [0.25, 0.45, 0.15], [0.45, 0.65, -0.2], [0.05, 0.35, 0.35], [-0.4, 0.3, -0.35]];
-  const wall = std('#cfd6e6', '#ffcf66', 0.25);
-  for (const [x, h, z] of towers) add(new THREE.BoxGeometry(0.22, h, 0.22), wall, x, h / 2, z);
-  return { group, mats, animate: () => undefined };
+  if (kind === 'ice') {
+    // a glacier front: icebergs calved into the sea
+    footprint('#9fe6ff');
+    const iceMat = keep(new THREE.MeshStandardMaterial({ color: '#f2f9ff', emissive: '#9fd8ff', emissiveIntensity: 0.15, roughness: 0.35, transparent: true }), 1);
+    const bergs = [[-0.25, 0.1, 0.34], [0.22, -0.2, 0.26], [0.05, 0.32, 0.18], [0.38, 0.22, 0.14]].map(([x, z, r], i) => {
+      const shape = new THREE.Shape();
+      for (let j = 0; j < 7; j++) { const a = (j / 7) * Math.PI * 2, rr = r * (0.75 + ((i * 7 + j * 3) % 5) / 10); j ? shape.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : shape.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.05, bevelEnabled: false });
+      return flat(geo, iceMat, x, 0.02, z);
+    });
+    return { group, fixed, animate: (t, k) => bergs.forEach((b, i) => { b.rotation.z = k + i + t * 0.05; }) };
+  }
+  if (kind === 'storm') {
+    // a hurricane: a spiral of cloud with an eye, and its shadow on the sea
+    const shadow = keep(new THREE.MeshBasicMaterial({ map: hurricane, color: '#000000', transparent: true, depthWrite: false }), 0.35);
+    const cloud = keep(new THREE.MeshBasicMaterial({ map: hurricane, transparent: true, depthWrite: false }), 1);
+    const sh = flat(new THREE.CircleGeometry(1.7, 48), shadow, 0.12, 0.04, 0.1);
+    const disc = flat(new THREE.CircleGeometry(1.7, 48), cloud, 0, 0.32, 0);
+    return { group, fixed, animate: (t, k) => { disc.rotation.z = k + t * 0.6; sh.rotation.z = disc.rotation.z; } };
+  }
+  if (kind === 'particle') {
+    // a cloud of charged particles at the satellite's height, faintly glowing like an aurora
+    const n = 150, pos = new Float32Array(n * 3), col = new Float32Array(n * 3), base = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, r = Math.pow(Math.random(), 0.6) * 0.8, y = (Math.random() - 0.5) * 0.8;
+      base[i * 3] = a; base[i * 3 + 1] = r; base[i * 3 + 2] = y;
+      const green = Math.random() < 0.6;
+      col.set(green ? [0.45, 1, 0.7] : [0.75, 0.55, 1], i * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const pm = keep(new THREE.PointsMaterial({ size: 0.07, map: glowTexture(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), 0.9);
+    const pts = add(new THREE.Points(geo, pm), 0, 1.2, 0) as THREE.Points;
+    sprite('#9fffc8', 0.22, 2.2, 1.2);
+    return {
+      group, fixed, animate: (t) => {
+        for (let i = 0; i < n; i++) {
+          const a = base[i * 3] + t * (0.6 - base[i * 3 + 1] * 0.4), r = base[i * 3 + 1];
+          pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = base[i * 3 + 2] + Math.sin(t * 1.3 + i) * 0.04; pos[i * 3 + 2] = Math.sin(a) * r * 0.7;
+        }
+        (pts.geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+      },
+    };
+  }
+  // city: street lights on a grid, densest in the centre
+  footprint('#ffd28a');
+  const n = 110, pos = new Float32Array(n * 3);
+  let seed = 11;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < n; i++) {
+    const r = Math.pow(rnd(), 1.6) * 0.7, a = rnd() * Math.PI * 2;
+    pos.set([Math.round(Math.cos(a) * r / 0.07) * 0.07, 0.05, Math.round(Math.sin(a) * r / 0.07) * 0.07], i * 3);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  add(new THREE.Points(geo, keep(new THREE.PointsMaterial({ size: 0.075, map: glowTexture(), color: '#ffcf7a', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), 1)));
+  sprite('#ffb85c', 0.3, 1.6, 0.05);
+  return { group, fixed, animate: () => undefined };
 }
 
 export function Targets({ s, tr }: { s: SimState; tr: Track }) {
   const kind = s.m.targets.kind;
   const pool = useMemo(() => {
-    const spiral = kind === 'storm' ? spiralTexture() : null;
-    return Array.from({ length: POOL }, () => buildLook(kind, spiral));
+    const hurricane = kind === 'storm' ? hurricaneTexture() : null;
+    return Array.from({ length: POOL }, () => buildLook(kind, hurricane));
   }, [kind]);
   const root = useRef<THREE.Group>(null);
   useEffect(() => () => pool.forEach((l) => disposeTree(l.group)), [pool]);
@@ -151,8 +217,8 @@ export function Targets({ s, tr }: { s: SimState; tr: Track }) {
       g.rotation.set(trackTilt(tr, o.ahead), 0, 0);
       // out of the orbit's reach: a faded ghost beyond the red line
       const opacity = o.lane < 0 ? 0.35 : Math.min(1, (2.0 - o.ahead) * 2.5); // fade in over the horizon
-      for (const m of look.mats) m.opacity = opacity;
-      look.animate(s.t, o.id * 1.7);
+      for (const [m, base] of look.fixed) m.opacity = base * opacity;
+      look.animate(s.t, o.id * 1.7, opacity);
     }
     for (let i = n; i < POOL; i++) pool[i].group.visible = false;
   });
