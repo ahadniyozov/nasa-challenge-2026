@@ -1,7 +1,7 @@
 // Everything in the flight that is not the globe, the targets or the satellite:
 // lane lines, the orbit's reach line, space junk, ground stations with their radio cones,
 // data packets flying home, and solar-storm particles. Instanced meshes, updated through refs.
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { CONTACT_WINDOW, type SimState } from '../../game2d/sim';
@@ -88,12 +88,37 @@ function panelGeometry() {
   return g;
 }
 
+/** corner brackets, the way tracking software boxes a tracked object (drawn once) */
+let bracketTex: THREE.Texture | null = null;
+function bracketTexture() {
+  if (bracketTex) return bracketTex;
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d')!;
+  g.strokeStyle = '#ffffff'; g.lineWidth = 4; g.lineCap = 'square';
+  for (const [x, y, dx, dy] of [[4, 4, 1, 1], [60, 4, -1, 1], [4, 60, 1, -1], [60, 60, -1, -1]]) {
+    g.beginPath(); g.moveTo(x, y + dy * 16); g.lineTo(x, y); g.lineTo(x + dx * 16, y); g.stroke();
+  }
+  bracketTex = new THREE.CanvasTexture(c);
+  return bracketTex;
+}
+
 const DEBRIS_KINDS = 3;
+/**
+ * In Earth's shadow real debris is invisible to the eye, so the display does what tracking software does:
+ * every tracked piece gets amber corner brackets, bright at night and faint in daylight.
+ */
 export function Debris({ s, tr }: { s: SimState; tr: Track }) {
   const refs = [useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null), useRef<THREE.InstancedMesh>(null)];
+  const marks = useRef<THREE.InstancedMesh>(null);
+  const dark = useRef(0);
+  const camera = useThree((st) => st.camera);
   const geos = useMemo(() => [shardGeometry(), panelGeometry(), new THREE.CylinderGeometry(0.13, 0.13, 0.55, 14, 1, true)], []);
   useEffect(() => () => geos.forEach((g) => g.dispose()), [geos]);
   useFrame(() => {
+    dark.current += ((s.shadow ? 1 : 0) - dark.current) * 0.06;
+    const mk = marks.current;
+    let m = 0;
     const n = [0, 0, 0];
     for (const o of s.objects) {
       if (o.kind !== 'debris' || o.done) continue;
@@ -104,19 +129,29 @@ export function Debris({ s, tr }: { s: SimState; tr: Track }) {
       q.setFromEuler(e.set(o.id + s.t * 0.9, o.id * 2.3 + s.t * 1.3, o.id * 0.7 + s.t * 0.4));
       const sc = 0.9 + (o.id % 4) * 0.12;
       im.setMatrixAt(n[kind]++, mtx.compose(v, q, scale.set(sc, sc, sc)));
+      if (mk && o.ahead > -0.05) mk.setMatrixAt(m++, mtx.compose(v, camera.quaternion, scale.setScalar(0.95)));
     }
     refs.forEach((r, k) => { if (r.current) { r.current.count = n[k]; r.current.instanceMatrix.needsUpdate = true; } });
+    if (mk) {
+      mk.count = m;
+      mk.instanceMatrix.needsUpdate = true;
+      (mk.material as THREE.MeshBasicMaterial).opacity = 0.28 + dark.current * 0.62;
+    }
   });
   return (
     <>
       <instancedMesh ref={refs[0]} args={[geos[0], undefined, JUNK]} frustumCulled={false}>
-        <meshStandardMaterial color="#7d8288" metalness={0.85} roughness={0.38} />
+        <meshStandardMaterial color="#8a9096" metalness={0.55} roughness={0.4} emissive="#1c2026" />
       </instancedMesh>
       <instancedMesh ref={refs[1]} args={[geos[1], undefined, JUNK]} frustumCulled={false}>
-        <meshStandardMaterial color="#1f2f52" metalness={0.5} roughness={0.25} emissive="#0b1428" side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#2a3c66" metalness={0.4} roughness={0.25} emissive="#141f3a" side={THREE.DoubleSide} />
       </instancedMesh>
       <instancedMesh ref={refs[2]} args={[geos[2], undefined, JUNK]} frustumCulled={false}>
-        <meshStandardMaterial color="#c7a24a" metalness={0.7} roughness={0.32} side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#c7a24a" metalness={0.5} roughness={0.32} emissive="#2a210c" side={THREE.DoubleSide} />
+      </instancedMesh>
+      <instancedMesh ref={marks} args={[undefined, undefined, JUNK * DEBRIS_KINDS]} frustumCulled={false} renderOrder={2}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial map={bracketTexture()} color="#ffa24d" transparent opacity={0.3} depthWrite={false} depthTest={false} />
       </instancedMesh>
     </>
   );
