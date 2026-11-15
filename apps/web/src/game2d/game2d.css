@@ -175,7 +175,7 @@
   .g2d-brief { grid-template-columns: 1fr; gap: 28px; }
   .g2d-build { display: flex; flex-direction: column; overflow-y: auto; }
   .g2d-art { height: 36vh; flex: none; border-right: 0; border-bottom: 1px solid var(--rule); }
-  .g2d-slots { overflow: visible; }
+  .g2d-slots { overflow: visible; flex: none; } /* not shrunk: a shrunk list spilled past the sticky footer */
   .g2d-foot { position: sticky; bottom: 0; flex-direction: column; align-items: stretch; gap: 12px; }
   .g2d-gauges { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
   .g2d-gauge small { display: none; }
@@ -253,4 +253,24 @@
   .g2d-mode-art { grid-row: auto; width: 120px; }
   .g2d-mode-go { grid-column: 1; }
   .g2d-mode h2 { font-size: 28px; }
+}
+
+/* ---- phones: the build screen keeps the part list in view (smaller drawing, compact gauges) */
+@media (max-width: 560px) {
+  .g2d-art { min-height: 0; padding: 8px 12px 10px; }
+  .g2d-art .g3d-hangar-canvas { flex: none; height: 30vh; min-height: 190px; }
+  .g2d-art .g3d-hangar-hint { display: none; }
+  .g2d-art .g2d-sat { max-height: 30vh; }
+  .g2d-titleblock div { padding: 3px 10px; }
+  .g2d-titleblock b { font-size: 16px; }
+  .g2d-foot { padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); gap: 6px; }
+  .g2d-gauges { gap: 2px 14px; }
+  .g2d-gauge .top { font-size: 13px; }
+  .g2d-gauge .top b { font-size: 16px; }
+  .g2d-gauge .track { height: 5px; margin: 3px 0 2px; }
+  .g2d-foot .r-btn { height: 48px; font-size: 20px; }
+}
+/* touch: a vertical swipe over the 3D satellite scrolls the page, a sideways drag still turns it */
+@media (pointer: coarse) {
+  .g3d-hangar-canvas, .g3d-hangar-canvas canvas { touch-action: pan-y !important; }
 }

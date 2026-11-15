@@ -139,7 +139,15 @@
   .crew-code b { font-size: 48px; }
   .cc-body { grid-template-columns: 1fr; }
   .cc-radar { max-width: 320px; margin: 0 auto; }
+  .cc-body { gap: 12px; }
   .cc-row { grid-template-columns: 120px minmax(0, 1fr) auto; }
   .crew-console { padding: 14px 12px 20px; }
   .crew-team li { grid-template-columns: 110px minmax(0, 1fr) auto; }
+}
+
+/* phones: the radar shrinks so the console keys (safe mode, callouts) are on the first screen */
+@media (max-width: 560px) {
+  .cc-radar { max-width: 210px; }
+  .cc-head > div { padding: 8px 14px; }
+  .cc-head b { font-size: 20px; }
 }

@@ -116,7 +116,8 @@ function CameraRig({ s, tr, hitAt }: { s: SimState; tr: Track; hitAt: MutableRef
   useFrame(() => {
     const cam = camera as THREE.PerspectiveCamera;
     const aspect = size.width / Math.max(1, size.height);
-    const back = Math.min(1.9, Math.max(1, 1.25 / aspect)); // narrow screens: step back so all lanes fit
+    // narrow screens step back a little so the three lanes fit, but stay close enough for the track to read on a phone
+    const back = Math.min(1.45, Math.max(1, 0.75 / aspect));
     const geo = tr.geo ? 1.5 : 1;
     follow.current += ((s.laneY - 1) * 0.55 - follow.current) * 0.08;
     const shake = Math.max(0, 1 - (s.t - hitAt.current) / 0.4) * 0.25;
@@ -125,7 +126,7 @@ function CameraRig({ s, tr, hitAt }: { s: SimState; tr: Track; hitAt: MutableRef
     cam.position.set(follow.current + jx, (5.6 * back) * geo + jy, 6.2 * back * geo);
     look.set(follow.current * 0.5, tr.geo ? -1.2 : -3.2, tr.geo ? -13 : -8.5);
     cam.lookAt(look);
-    const fov = aspect < 0.8 ? 62 : 55;
+    const fov = aspect < 0.8 ? 58 : 55;
     if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); }
   });
   return null;

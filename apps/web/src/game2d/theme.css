@@ -112,3 +112,8 @@
   .runner-links { gap: 0; }
   .runner .link { margin: 0 5px; font-size: 15px; }
 }
+
+/* phone on its side: a thinner top bar leaves more of the screen to the flight */
+@media (orientation: landscape) and (max-height: 500px) {
+  .runner-top { height: 40px; }
+}
