@@ -45,6 +45,7 @@ const T_END = 9.0;
 
 // ---- lenses: a long lens on the pad (that is what makes a launch look real and not like a model), wider later
 const FOV: Record<Shot, number> = { pad: 15, ascent: 28, orbit: 36 };
+const NEAR: Record<Shot, number> = { pad: 1, ascent: 0.3, orbit: 0.05 };
 const PAD_CAM = 2.8; // the pad camera stands this much further away than a 40° lens would need
 
 type Shot = 'pad' | 'ascent' | 'orbit';
@@ -548,7 +549,7 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
     const shot: Shot = t >= T_ORBIT ? 'orbit' : t >= T_ASCENT ? 'ascent' : 'pad';
     if (shot !== lastShot.current) {
       lastShot.current = shot; onShot(shot);
-      cam.fov = FOV[shot]; cam.updateProjectionMatrix();
+      cam.fov = FOV[shot]; cam.near = NEAR[shot]; cam.updateProjectionMatrix();
       scene.environmentIntensity = shot === 'orbit' ? 0.35 : 0.6;
     }
 
@@ -717,15 +718,15 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
     const q = Math.round(dep * 20) / 20;
     if (q !== deployQ.current) { deployQ.current = q; setDeploy(q); }
 
-    // camera: beside the upper stage, the curved horizon in the upper third, a slow drift;
-    // after separation it pushes in on the satellite
+    // camera: square to the upper stack and centred on it, so the stage separation, the nose and both fairing
+    // halves stay in frame; the curved horizon behind; after separation it eases in on the satellite
     const push = smooth(T_SEP, T_END - 0.2, t);
-    v.localToWorld(tmp.set(0, H1 + H2 * 0.6, 0));
+    v.localToWorld(tmp.set(0, H1 + (H2 + HF) * 0.45, 0));
     sat.current!.getWorldPosition(look);
-    tmp.lerp(look, push);
-    const d = (2.4 * (H2 + HF) + 2.2) * (1 - push * 0.5);
-    camera.position.set(tmp.x - 0.35 * d + to * 0.12, tmp.y + 0.3 * d, tmp.z + d);
-    camera.lookAt(tmp.x + 0.25 * (1 - push), tmp.y - 0.12, tmp.z);
+    tmp.lerp(look, push * 0.6);
+    const d = (3.4 * (H2 + HF) + 2.6) * (1 - push * 0.3);
+    camera.position.set(tmp.x - 0.12 * d + to * 0.08, tmp.y + 0.2 * d, tmp.z + d);
+    camera.lookAt(tmp.x, tmp.y - 0.05 * d, tmp.z);
   });
 
   return (
@@ -833,12 +834,12 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
       {/* ---------- the vehicle (rocket-local: y up, base of stage 1 at y = 0) ---------- */}
       <group ref={vehicle}>
         <group ref={stage1}>
-          <mesh position={[0, H1 / 2, 0]}><cylinderGeometry args={[R, R, H1, 48, 1, true]} /><meshStandardMaterial map={skin1} {...paint} /></mesh>
+          <mesh position={[0, (H1 - 0.32) / 2, 0]}><cylinderGeometry args={[R, R, H1 - 0.32, 48, 1, true]} /><meshStandardMaterial map={skin1} {...paint} /></mesh>
           {/* engine section, a thin band low down, a cable raceway and the dark interstage */}
           <mesh position={[0, 0.09, 0]}><cylinderGeometry args={[R * 1.02, R * 1.04, 0.18, 48]} /><meshStandardMaterial {...DARK} /></mesh>
-          <mesh position={[0, H1 * 0.22, 0]}><cylinderGeometry args={[R * 1.004, R * 1.004, 0.035, 48]} /><meshStandardMaterial {...DARK} /></mesh>
+          <mesh position={[0, H1 * 0.22, 0]}><cylinderGeometry args={[R * 1.015, R * 1.015, 0.035, 48]} /><meshStandardMaterial {...DARK} /></mesh>
           <mesh position={[R * 0.98, H1 * 0.55, 0]}><boxGeometry args={[0.035, H1 * 0.8, 0.06]} /><meshStandardMaterial map={skin1} {...paint} /></mesh>
-          <mesh position={[0, H1 - 0.16, 0]}><cylinderGeometry args={[R * 1.005, R * 1.005, 0.32, 48]} /><meshStandardMaterial color="#202326" roughness={0.42} metalness={0.3} /></mesh>
+          <mesh position={[0, H1 - 0.16, 0]}><cylinderGeometry args={[R, R, 0.32, 48]} /><meshStandardMaterial color="#202326" roughness={0.42} metalness={0.3} /></mesh>
           {spec.cluster
             ? <>{Array.from({ length: 8 }, (_, i) => <Bell key={i} r={R * 0.17} x={Math.cos(i * Math.PI / 4) * R * 0.62} z={Math.sin(i * Math.PI / 4) * R * 0.62} />)}<Bell r={R * 0.19} /></>
             : <Bell r={R * 0.42} />}
@@ -867,8 +868,8 @@ function LaunchWorld({ build, mission, km, onEvent, onShot, onTick, onFinish }: 
         </group>
 
         <group ref={stage2}>
-          <mesh position={[0, H1 + H2 / 2, 0]}><cylinderGeometry args={[R, R, H2, 48]} /><meshStandardMaterial map={skin2} {...paint} /></mesh>
-          <mesh position={[0, H1 + H2 - 0.03, 0]}><cylinderGeometry args={[R * 1.005, R * 1.005, 0.06, 48]} /><meshStandardMaterial {...DARK} /></mesh>
+          <mesh position={[0, H1 + (H2 - 0.06) / 2, 0]}><cylinderGeometry args={[R, R, H2 - 0.06, 48]} /><meshStandardMaterial map={skin2} {...paint} /></mesh>
+          <mesh position={[0, H1 + H2 - 0.03, 0]}><cylinderGeometry args={[R, R, 0.06, 48]} /><meshStandardMaterial {...DARK} /></mesh>
           {/* vacuum engine, hidden in the interstage until staging: dark niobium bell */}
           <mesh position={[0, H1 - R * 0.32, 0]}>
             <cylinderGeometry args={[R * 0.16, R * 0.55, R * 0.62, 32, 1, true]} />
@@ -955,7 +956,7 @@ export function Launch3D({ build, mission = MISSIONS[0], onDone }: Launch3DProps
 
   return (
     <div className="runner-stage l3d" onClick={finish}>
-      <Canvas camera={{ position: [9.5 * PAD_CAM, 1.2, 11 * PAD_CAM], fov: FOV.pad, near: 0.05, far: 1200 }} dpr={[1, 1.75]} gl={{ antialias: true }}>
+      <Canvas camera={{ position: [9.5 * PAD_CAM, 1.2, 11 * PAD_CAM], fov: FOV.pad, near: NEAR.pad, far: 1200 }} dpr={[1, 1.75]} gl={{ antialias: true }}>
         <Suspense fallback={null}>
           <LaunchWorld build={build} mission={mission} km={km} onEvent={setEvent} onShot={setShot} onTick={onTick} onFinish={finish} />
         </Suspense>
