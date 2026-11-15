@@ -1,0 +1,50 @@
+/* 3D launch: a launch-broadcast overlay over the WebGL scene (tokens in game2d/theme.css) */
+.l3d { cursor: pointer; background: #05080f; }
+.l3d canvas { touch-action: none; }
+
+/* a short fade from black at each camera cut */
+.l3d-cut { position: absolute; inset: 0; background: #000; pointer-events: none; animation: l3d-cut .45s ease-out forwards; }
+@keyframes l3d-cut { from { opacity: 1; } to { opacity: 0; } }
+
+.l3d-head { position: absolute; left: 28px; top: 22px; pointer-events: none; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }
+.l3d-clock { font-family: var(--display); font-size: 60px; font-weight: 600; line-height: 1; letter-spacing: .01em; color: #fff; font-variant-numeric: tabular-nums; }
+.l3d-vehicle { margin-top: 6px; font-size: 17px; color: var(--space-text); }
+.l3d-skip { position: absolute; right: 22px; top: 22px; font-size: 14px; color: rgba(233, 237, 241, .72); pointer-events: none; }
+
+.l3d-foot {
+  position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none;
+  display: flex; align-items: flex-end; gap: 40px; padding: 60px 28px 24px;
+  background: linear-gradient(to bottom, transparent, rgba(4, 8, 15, .78));
+}
+
+/* the flight events in order: a line with a node per event */
+.l3d-events { flex: 1; max-width: 760px; display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; position: relative; }
+.l3d-events::before { content: ''; position: absolute; left: 6px; right: 0; top: 6px; height: 2px; background: rgba(233, 237, 241, .28); }
+.l3d-events li { position: relative; padding-top: 22px; font-size: 15px; color: var(--space-dim); line-height: 1.25; }
+.l3d-events li::before {
+  content: ''; position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 50%;
+  background: #05080f; border: 2px solid rgba(233, 237, 241, .5);
+}
+.l3d-events li.done { color: var(--space-text); }
+.l3d-events li.done::before { background: var(--space-text); border-color: var(--space-text); }
+.l3d-events li.now { color: #fff; font-weight: 600; }
+.l3d-events li.now::before { background: var(--orange); border-color: var(--orange); box-shadow: 0 0 0 5px rgba(217, 72, 15, .3); }
+
+.l3d-telemetry { display: flex; gap: 34px; margin: 0; }
+.l3d-telemetry div { min-width: 120px; }
+.l3d-telemetry dt { font-size: 14px; color: var(--space-dim); }
+.l3d-telemetry dd { margin: 2px 0 0; font-family: var(--display); font-size: 36px; font-weight: 600; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .l3d-head { left: 16px; top: 14px; }
+  .l3d-clock { font-size: 40px; }
+  .l3d-vehicle { font-size: 14px; }
+  .l3d-skip { display: none; }
+  .l3d-foot { flex-direction: column-reverse; align-items: stretch; gap: 14px; padding: 40px 16px 16px; }
+  .l3d-telemetry { gap: 24px; }
+  .l3d-telemetry dd { font-size: 28px; }
+  .l3d-events li { font-size: 12px; padding-top: 18px; padding-right: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .l3d-cut { animation-duration: .01s; }
+}

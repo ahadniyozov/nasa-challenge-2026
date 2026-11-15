@@ -61,3 +61,16 @@ curl -sI $D/textures/earth-day.webp | grep -iE 'content-type|cache-control'  # i
 | `assets/index-*.js` (gzip) | 90 КБ | — |
 
 Текстуры уже в WebP, отдельное сжатие не нужно. `encode` в Caddy их не пережимает (WebP уже сжат), а JS/CSS/HTML сжимает.
+
+## Crew mode on the relay (gonogo.twiy.ceo)
+
+Crew mode needs the small socket.io server in `apps/server` next to the static site. On the relay (Caddy runs from systemd):
+
+1. Copy the code (from the Mac): `rsync -az --delete --exclude node_modules --exclude .git --exclude apps/web/dist --exclude _nasa --exclude 'Claude outputs' ~/nasa-challenge-2026/ ahad@158.160.239.254:~/gonogo/`
+2. Once: Node 22 on the relay: `curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs`
+3. `cd ~/gonogo && npm ci -w @mission/server`
+4. Once: `sudo cp deploy/gonogo-crew.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now gonogo-crew` (after an update: `sudo systemctl restart gonogo-crew`)
+5. Once: in the `gonogo.twiy.ceo` block of `/etc/caddy/Caddyfile` add, before `file_server`: `handle /socket.io/* { reverse_proxy 127.0.0.1:8787 }`, then `sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`
+6. Check: `curl -s localhost:8787/api/health` prints `ok`.
+
+Locally: `npm run dev:server` in one terminal and `npm run dev` in another (Vite forwards `/socket.io` to port 8787).

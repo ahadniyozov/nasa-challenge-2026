@@ -1,0 +1,40 @@
+// TEMPORARY Russian for crew mode. Delete before the final build.
+export const RU_CREW: Record<string, string> = {
+  'Crew mode': 'Командный режим', 'Play as a crew': 'Играть командой', Crew: 'Команда', 'Crew {code}': 'Команда {code}',
+  '2-4 players, each on their own phone or laptop: flight director, engineer, scientist and communications design one satellite together.':
+    '2–4 игрока, у каждого свой телефон или ноутбук: руководитель полёта, инженер, учёный и связист вместе проектируют один спутник.',
+  'Design one satellite as a team. Each of you decides your own parts, the budget is shared, and nothing flies until every role says GO.':
+    'Проектируйте спутник командой. Каждый решает свои детали, бюджет общий, и ничего не полетит, пока каждая роль не скажет GO.',
+  'The crew server cannot be reached. Check the connection and try again.': 'Сервер команды недоступен. Проверь интернет и попробуй ещё раз.',
+  'Your name': 'Твоё имя', 'For example, Alex': 'Например, Саша',
+  'Start a new crew': 'Новая команда', 'You become the flight director and get a code to share.': 'Ты станешь руководителем полёта и получишь код для друзей.',
+  'Create a crew': 'Создать команду', 'Join a crew': 'Войти в команду', 'Crew code': 'Код команды', Join: 'Войти',
+  'No crew with this code': 'Команды с таким кодом нет', 'This crew is full (4 players)': 'В команде уже 4 игрока',
+  'Leave the crew': 'Выйти из команды', 'Copy the invite link': 'Скопировать ссылку-приглашение', 'Link copied': 'Ссылка скопирована',
+  'Friends open the game, choose Play as a crew and enter this code. Up to 4 players; with fewer, one player takes several roles.':
+    'Друзья открывают игру, выбирают «Играть командой» и вводят этот код. До 4 игроков; если вас меньше, один берёт несколько ролей.',
+  Roles: 'Роли', Mission: 'Миссия', Free: 'Свободно', Take: 'Взять', 'Give up': 'Отдать', you: 'ты', offline: 'не в сети', 'In the crew': 'В команде',
+  'Start designing': 'Начать проектирование', 'Every role needs a player first.': 'Сначала у каждой роли должен быть игрок.',
+  'The flight director picks the mission and starts.': 'Руководитель полёта выбирает миссию и начинает.',
+  'Flight director': 'Руководитель полёта', 'Spacecraft engineer': 'Инженер спутника', 'Mission scientist': 'Учёный миссии', Communications: 'Связист',
+  'Rocket, orbit and the budget. Calls the GO / NO-GO poll and flies the satellite.': 'Ракета, орбита и бюджет. Проводит опрос GO / NO-GO и ведёт спутник.',
+  'Body, solar panels, battery, shield and thruster. Turns on safe mode in solar storms.': 'Корпус, панели, батарея, щит и двигатель. Включает безопасный режим в бурю.',
+  'The instrument, memory and computer. Watches the data come in.': 'Прибор, память и компьютер. Следит за данными.',
+  'The antenna and ground stations. Watches the downlink.': 'Антенна и наземные станции. Следит за связью с Землёй.',
+  'You change the parts marked with your role. The budget is shared.': 'Ты меняешь детали со своей ролью. Бюджет общий.',
+  '{n} parts': 'деталей: {n}', 'GO / NO-GO poll': 'Опрос GO / NO-GO', 'Standing by': 'Ждём',
+  '{role} called NO-GO. Talk it through, change the design and poll again.': '{role} сказал NO-GO. Обсудите, измените проект и проведите опрос снова.',
+  'The flight director starts the GO / NO-GO poll when the team is ready.': 'Когда команда готова, руководитель полёта начинает опрос GO / NO-GO.',
+  'Poll the room': 'Опрос GO / NO-GO', 'You said GO. Waiting for the rest of the crew.': 'Ты сказал GO. Ждём остальных.',
+  '{name} (flight director) decides whether to fly again or pick the next mission. Anyone can send the team back to the design.':
+    '{name} (руководитель полёта) решает: лететь снова или выбрать следующую миссию. Вернуть команду к проекту может любой.',
+  "Waiting for the flight director's data...": 'Ждём данные от руководителя полёта...',
+  'Your console': 'Твой пульт', Flying: 'Ведёт', 'Radar: what is ahead of the satellite': 'Радар: что впереди спутника',
+  Target: 'Цель', Debris: 'Обломок', 'Ground station': 'Наземная станция', Sun: 'Солнце', Quiet: 'Спокойно',
+  Satellite: 'Спутник', Asleep: 'Спит', Working: 'Работает', 'Sending data home': 'Передаёт данные', 'No contact': 'Нет связи',
+  'Next ground station': 'Следующая станция', 'Always in view': 'Всегда на связи', 'in {n} s': 'через {n} с', 'Not in range yet': 'Пока не видно',
+  'Waiting to be sent': 'Ждут отправки', 'Call to the flight director': 'Подсказать руководителю',
+  'Debris, left lane': 'Обломок слева', 'Debris, centre lane': 'Обломок по центру', 'Debris, right lane': 'Обломок справа',
+  'Target on the left': 'Цель слева', 'Target on the right': 'Цель справа', 'Solar storm coming': 'Идёт солнечная буря',
+  'Safe mode on': 'Безопасный режим включён', 'Safe mode off': 'Безопасный режим выключен',
+};

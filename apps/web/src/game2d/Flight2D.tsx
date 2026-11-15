@@ -4,9 +4,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import type { FlightParams } from './config';
-import { FlightHud, FlightMessages, hudOf, initialHud, playFlightSounds, useFlightControls } from './FlightHud';
+import { FlightHud, FlightMessages, hudOf, initialHud, playFlightSounds, useFlightControls, type HudState } from './FlightHud';
 import type { Mission, TargetKind } from './missions';
-import { createSim, stepSim, type FlightStats } from './sim';
+import { createSim, stepSim, type FlightStats, type SimState } from './sim';
 
 export type { FlightStats } from './sim';
 
@@ -19,12 +19,14 @@ const laneX = (W: number, l: number) => (l < 0 ? Math.max(26, W / 2 - gapOf(W) *
 /** each object gets its own fixed spin from its id (looks random, same every time) */
 const spinOf = (id: number) => (id * 2.399) % (Math.PI * 2);
 
-export function Flight2D({ p, m, onEnd, seed }: { p: FlightParams; m: Mission; onEnd(s: FlightStats): void; seed?: number }) {
+export function Flight2D({ p, m, onEnd, seed, onTick }: { p: FlightParams; m: Mission; onEnd(s: FlightStats): void; seed?: number; onTick?: (s: SimState, h: HudState) => void }) {
   const { t } = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
   const [hud, setHud] = useState(() => initialHud(p));
   const control = useFlightControls(p, 'g2d');
   const endRef = useRef(onEnd);
+  const tickRef = useRef(onTick);
+  tickRef.current = onTick;
   endRef.current = onEnd;
 
   useEffect(() => {
@@ -144,7 +146,7 @@ export function Flight2D({ p, m, onEnd, seed }: { p: FlightParams; m: Mission; o
         ctx.restore();
       }
 
-      if (++hudTick % 6 === 0) setHud(hudOf(s, msgs.current(s)));
+      if (++hudTick % 6 === 0) { const h = hudOf(s, msgs.entries(s)); setHud(h); tickRef.current?.(s, h); }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

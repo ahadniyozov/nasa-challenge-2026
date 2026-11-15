@@ -1,0 +1,53 @@
+/* 3D views (tokens in game2d/theme.css): the satellite on the build screen and the globe above the manifest. */
+
+/* ---- HangarView: fills the drawing area of the build screen's art panel */
+.g3d-hangar-canvas {
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-height: 260px;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+.g3d-hangar-canvas:active { cursor: grabbing; }
+.g3d-hangar-hint { align-self: stretch; margin: 4px 0 12px; font-size: 13px; color: var(--steel); }
+
+/* ---- GlobeHero: dark band above the manifest list */
+.g3d-globe {
+  height: 360px;
+  margin: 0 0 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 55%, #13243a 0%, var(--space) 70%);
+  cursor: grab;
+  touch-action: none;
+}
+.g3d-globe:active { cursor: grabbing; }
+
+.g3d-pin {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--space-panel); color: var(--space-text);
+  border: 1px solid var(--space-line); border-radius: 6px;
+  padding: 4px 10px 4px 4px;
+  font-family: 'Barlow', system-ui, sans-serif; font-size: 14px; font-weight: 600;
+  white-space: nowrap; cursor: pointer; user-select: none;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: border-color .15s ease;
+}
+.g3d-pin:hover:not(:disabled), .g3d-pin.active:not(:disabled) { border-color: var(--orange); }
+.g3d-pin.locked { opacity: .55; cursor: not-allowed; }
+.g3d-pin .p-num {
+  width: 22px; height: 22px; border-radius: 4px; display: inline-grid; place-items: center;
+  background: #e9edf1; color: var(--space); font-family: var(--display); font-size: 15px; font-weight: 700;
+}
+.g3d-pin.locked .p-num { background: #3b4a5c; color: var(--space-dim); }
+.g3d-pin .p-stars { display: inline-flex; gap: 2px; }
+.g3d-pin .p-stars i { width: 6px; height: 6px; border-radius: 1px; border: 1px solid #6b7785; }
+.g3d-pin .p-stars i.on { background: var(--kapton); border-color: var(--kapton); }
+
+@media (max-width: 700px) {
+  .g3d-globe { height: 260px; margin-bottom: 20px; }
+  .g3d-pin { padding: 3px; }
+  .g3d-pin .p-title, .g3d-pin .p-stars { display: none; }
+  .g3d-hangar-canvas { min-height: 240px; }
+}

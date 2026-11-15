@@ -155,6 +155,16 @@ export const sfx = {
     noise(4.2, { freq: 300, freqTo: 1400, vol: 0.5, attack: 0.25 });
     noise(4.2, { freq: 90, vol: 0.4, attack: 0.15 });
   },
+  /** stage or fairing separation: a short pyrotechnic bang */
+  separation() {
+    noise(0.25, { filter: 'bandpass', freq: 1800, freqTo: 300, vol: 0.35 });
+    tone(110, 0.2, { type: 'triangle', vol: 0.2, slideTo: 60 });
+  },
+  /** satellite released into orbit: a soft two-note chime */
+  released() {
+    tone(784, 0.25, { type: 'sine', vol: 0.18 });
+    tone(1175, 0.4, { type: 'sine', vol: 0.16, delay: 0.14 });
+  },
   /** mission accomplished: rising major arpeggio */
   win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, { type: 'triangle', vol: 0.22, delay: i * 0.12 })); },
   /** mission failed: falling notes */

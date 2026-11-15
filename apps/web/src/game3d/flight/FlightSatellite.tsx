@@ -2,14 +2,28 @@
 // blinks after a hit, and wears rings for safe mode (yellow), a debris shield (cyan) and contact (green).
 // The model itself is a child, so developer 2's <SatelliteModel build={...} /> drops straight in.
 import { useFrame } from '@react-three/fiber';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import type { Build } from '../../game2d/config';
 import type { SimState } from '../../game2d/sim';
+import { SatelliteModel } from '../SatelliteModel';
 import { glowTexture } from './Targets';
 import { GAP, SAT_ALT } from './track';
 
-/** Placeholder until SatelliteModel is ready: a gold box, wings sized by the chosen panels, a camera looking down. */
+/** The player's satellite (developer 2's SatelliteModel). Re-renders only when asleep / safe / shadow flip, not per frame. */
+export function FlightModel({ s, build }: { s: SimState; build: Build }) {
+  const [st, setSt] = useState({ asleep: false, safe: false, shadow: false });
+  useFrame(() => {
+    if (s.asleep !== st.asleep || s.safe !== st.safe || s.shadow !== st.shadow) setSt({ asleep: s.asleep, safe: s.safe, shadow: s.shadow });
+  });
+  return (
+    <group scale={0.62}>
+      <SatelliteModel build={build} mission={s.m} asleep={st.asleep} safe={st.safe} shadow={st.shadow} />
+    </group>
+  );
+}
+
+/** Simple stand-in (kept for tests and as a fallback):  is ready: a gold box, wings sized by the chosen panels, a camera looking down. */
 export function SatelliteStandIn({ asleep, build }: { asleep: React.MutableRefObject<boolean>; build: Build }) {
   const wing = build.panels === 'solar-deploy-l' ? 1.25 : build.panels === 'solar-deploy-s' ? 0.85 : 0.45;
   const body = useRef<THREE.MeshStandardMaterial>(null);
@@ -79,15 +93,15 @@ export function FlightSatellite({ s, pos, photoAt, children }: { s: SimState; po
       <group ref={model}>{children}</group>
       <mesh ref={safe} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <torusGeometry args={[1.25, 0.05, 8, 48]} />
-        <meshBasicMaterial color="#ffd23f" />
+        <meshBasicMaterial color="#f2a93b" />
       </mesh>
       <mesh ref={shield} visible={false}>
         <sphereGeometry args={[1.05, 24, 16]} />
-        <meshBasicMaterial color="#4dd2ff" transparent opacity={0.12} depthWrite={false} />
+        <meshBasicMaterial color="#9fb6cc" transparent opacity={0.1} depthWrite={false} />
       </mesh>
       <mesh ref={contact} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <torusGeometry args={[0.95, 0.03, 6, 40]} />
-        <meshBasicMaterial color="#3ddc84" transparent />
+        <meshBasicMaterial color="#45d28a" transparent />
       </mesh>
       <sprite ref={flash} position={[0, -0.6, 0]} visible={false}>
         <spriteMaterial map={glowTexture()} color="#ffffff" transparent depthWrite={false} blending={THREE.AdditiveBlending} />

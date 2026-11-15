@@ -1,25 +1,24 @@
-/* "In real life" cards and the NASA Resources screen. Uses the --r-* tokens from game2d/theme.css. */
-.c-link { color: var(--r-accent); text-decoration: none; font-weight: 700; }
-.c-link:hover, .c-link:focus-visible { text-decoration: underline; }
+/* "In real life" cards and the NASA Resources screen (tokens in game2d/theme.css). */
+.c-link { color: var(--orange-ink); text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+.c-link:hover { color: var(--ink); }
 
-.c-real { margin-top: 18px; background: #0d2a4a; border: 2px solid #1f5f8f; border-radius: 18px; padding: 14px 16px; }
-.c-real-head { display: flex; gap: 14px; align-items: center; }
-.c-real-head h3 { margin: 2px 0 4px; font-size: 20px; }
-.c-real-head p { margin: 0; color: var(--r-dim); line-height: 1.4; }
-.c-real-tag { color: var(--r-accent); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.c-sketch { flex: 0 0 76px; width: 76px; height: 76px; }
-.c-real ul { margin: 10px 0 10px; padding-left: 20px; line-height: 1.45; }
-.c-real li { margin-bottom: 4px; }
+.c-real { margin-top: 36px; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 24px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 22px; }
+.c-real .c-sketch { width: 112px; height: 112px; }
+.c-real-tag { font-size: 14px; color: var(--steel); }
+.c-real h3 { font-family: var(--display); font-size: 28px; font-weight: 600; margin: 2px 0 6px; line-height: 1.1; }
+.c-real p { margin: 0; color: var(--steel); max-width: 60ch; }
+.c-real ul { margin: 14px 0; padding-left: 18px; max-width: 64ch; }
+.c-real li { margin-bottom: 6px; }
 
-.c-res h2 { font-size: 18px; margin: 20px 0 8px; }
-.c-res-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.c-res-list li { display: flex; gap: 12px; align-items: flex-start; background: #1b2463; border-radius: 12px; padding: 10px 12px; }
-.c-res-list .e { font-size: 24px; line-height: 1.2; }
-.c-res-list div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.c-res-list small { color: var(--r-dim); line-height: 1.4; }
+.c-res section { margin-top: 34px; }
+.c-res-list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.c-res-list li { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.c-res-list b { font-weight: 600; }
+.c-res-list small { color: var(--steel); font-size: 15px; line-height: 1.45; }
 .c-res-list a, .c-res-list b { overflow-wrap: anywhere; }
 
-@media (max-width: 520px) {
-  .c-sketch { flex-basis: 56px; width: 56px; height: 56px; }
-  .c-real-head h3 { font-size: 18px; }
+@media (max-width: 640px) {
+  .c-real { grid-template-columns: 1fr; gap: 12px; }
+  .c-real .c-sketch { width: 72px; height: 72px; }
+  .c-res-list li { grid-template-columns: 1fr; gap: 4px; }
 }

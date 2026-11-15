@@ -15,7 +15,7 @@ export const RU_2D: Record<string, string> = {
   'Walkie-talkie': 'Рация', 'Very slow. Almost free.': 'Очень медленно. Почти бесплатно.',
   'A few photos per pass.': 'Несколько фото за пролёт.', Dish: 'Тарелка', 'Many photos per pass, needs power.': 'Много фото за пролёт, нужна энергия.',
   '4 photos': '4 фото', '8 photos': '8 фото', '12 photos': '12 фото', 'Cheap.': 'Дёшево.',
-  None: 'Нет', Shield: 'Щит', '+1 ❤️, +2 kg, +$0.3M': '+1 ❤️, +2 кг, +$0.3M',
+  None: 'Нет', Shield: 'Щит', '+1 hull point, +2 kg, +$0.3M': '+1 к прочности, +2 кг, +$0.3M',
   'Small thruster': 'Малый двигатель', 'Fights air drag - longer life in low orbit.': 'Борется с торможением воздуха — дольше живёт на низкой орбите.',
   'Low 400 km': 'Низкая 400 км', 'Sharp, cheap, but air pulls you down in ~1 year.': 'Чётко и дёшево, но воздух стащит вниз за ~1 год.',
   'Polar 550 km': 'Полярная 550 км', 'Flies over the whole Earth, lasts ~10 years.': 'Пролетает над всей Землёй, держится ~10 лет.',

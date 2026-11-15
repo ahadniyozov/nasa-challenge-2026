@@ -29,9 +29,9 @@ export const SLOTS: Slot[] = [
     { id: 'batt-l', emoji: '🔋', title: 'Large', text: '2 kWh, 14 kg.' },
   ] },
   { id: 'antenna', emoji: '📡', title: 'Antenna', group: 'satellite', options: [
-    { id: 'uhf', emoji: '📻', title: 'Walkie-talkie', text: 'Very slow. Almost free.' },
-    { id: 's-band', emoji: '📶', title: 'Antenna', text: 'A few photos per pass.' },
-    { id: 'x-band', emoji: '📡', title: 'Dish', text: 'Many photos per pass, needs power.' },
+    { id: 'uhf', emoji: '📻', title: 'UHF radio', text: 'Very slow. Almost free.' },
+    { id: 's-band', emoji: '📶', title: 'S-band radio', text: 'A few photos per pass.' },
+    { id: 'x-band', emoji: '📡', title: 'X-band dish', text: 'Many photos per pass, needs power.' },
   ] },
   { id: 'memory', emoji: '💾', title: 'Memory', group: 'satellite', options: [
     { id: 'm4', emoji: '💾', title: '4 photos', text: 'Cheap.' },
@@ -40,7 +40,7 @@ export const SLOTS: Slot[] = [
   ] },
   { id: 'shield', emoji: '🛡️', title: 'Debris shield', group: 'satellite', options: [
     { id: 'none', emoji: '➖', title: 'None', text: '' },
-    { id: 'shield', emoji: '🛡️', title: 'Shield', text: '+1 ❤️, +2 kg, +$0.3M' },
+    { id: 'shield', emoji: '🛡️', title: 'Shield', text: '+1 hull point, +2 kg, +$0.3M' },
   ] },
   { id: 'thruster', emoji: '💨', title: 'Thruster', group: 'satellite', options: [
     { id: 'none', emoji: '➖', title: 'None', text: '' },
@@ -197,13 +197,13 @@ export function analyse(build: Build, m: Mission = MISSIONS[1]): Analysis {
 
   const energy = Math.max(1 / Math.max(genRatio, 0.01), batteryRatio);
   const gauges: Analysis['gauges'] = [
-    { id: 'weight', emoji: '⚖️', label: 'Weight', value: b.mass.launcherCapacityKg > 0 ? withMargin / b.mass.launcherCapacityKg : 9, level: lvl(b.mass.launcherCapacityKg > 0 ? withMargin / b.mass.launcherCapacityKg : 9),
+    { id: 'weight', emoji: '⚖️', label: 'Mass', value: b.mass.launcherCapacityKg > 0 ? withMargin / b.mass.launcherCapacityKg : 9, level: lvl(b.mass.launcherCapacityKg > 0 ? withMargin / b.mass.launcherCapacityKg : 9),
       detail: '{kg} kg of {cap} kg the rocket lifts', params: { kg: Math.round(withMargin), cap: b.mass.launcherCapacityKg } },
-    { id: 'energy', emoji: '⚡', label: 'Energy', value: energy, level: lvl(energy),
-      detail: 'panels {g} W · uses {u} W', params: { g: Math.round(b.power.endOfLifeAverageW), u: Math.round(b.power.averageLoadW) } },
+    { id: 'energy', emoji: '⚡', label: 'Power', value: energy, level: lvl(energy),
+      detail: 'panels {g} W, load {u} W', params: { g: Math.round(b.power.endOfLifeAverageW), u: Math.round(b.power.averageLoadW) } },
     { id: 'night', emoji: '🌑', label: 'Battery in shadow', value: batteryRatio, level: lvl(batteryRatio),
       detail: 'needs {n} Wh of {h} Wh', params: { n: Math.round(b.power.eclipseNeedWh), h: Math.round(b.power.batteryUsableWh) } },
-    { id: 'money', emoji: '💰', label: 'Money', value: totalCostM / budgetM, level: lvl(totalCostM / budgetM),
+    { id: 'money', emoji: '💰', label: 'Budget', value: totalCostM / budgetM, level: lvl(totalCostM / budgetM),
       detail: '${c}M of ${b}M', params: { c: totalCostM.toFixed(1), b: budgetM } },
   ];
 

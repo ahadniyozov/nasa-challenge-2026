@@ -12,7 +12,9 @@ const chunkOf = (id: string) => {
 
 export default defineConfig({
   plugins: [react()],
-  server: { port: 5173 },
+  // crew mode talks to the crew server (apps/server, port 8787) on the same origin, path /socket.io
+  server: { port: 5173, proxy: { '/socket.io': { target: 'http://localhost:8787', ws: true } } },
+  preview: { proxy: { '/socket.io': { target: 'http://localhost:8787', ws: true } } },
   build: {
     chunkSizeWarningLimit: 1200,
     rollupOptions: { output: { manualChunks: chunkOf } },

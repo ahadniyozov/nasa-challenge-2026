@@ -3,7 +3,7 @@
 // The sim is stepped in useFrame and meshes are moved through refs - no React state per frame.
 import { Stars } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import * as THREE from 'three';
 import type { Build, FlightParams } from '../game2d/config';
 import { FlightHud, FlightMessages, hudOf, initialHud, playFlightSounds, useFlightControls, type HudState } from '../game2d/FlightHud';
@@ -11,19 +11,23 @@ import type { Mission } from '../game2d/missions';
 import { createSim, stepSim, type FlightStats, type SimInput, type SimState } from '../game2d/sim';
 import { useT } from '../i18n';
 import { Earth } from './flight/Earth';
-import { FlightSatellite, SatelliteStandIn } from './flight/FlightSatellite';
+import { FlightModel, FlightSatellite } from './flight/FlightSatellite';
 import { Targets } from './flight/Targets';
 import { makeTrack, REACH_X, SAT_ALT, sunDir, trackPos, type Track } from './flight/track';
 import { Debris, Lanes, Stations, StormSparks } from './flight/World';
 import './flight3d.css';
 
-/** `build` is the player's satellite: developer 2's SatelliteModel draws it (until then a stand-in). */
-export default function Flight3D({ p, m, build, onEnd, seed }: { p: FlightParams; m: Mission; build: Build; onEnd(s: FlightStats): void; seed?: number }) {
+/** `build` is the player's satellite, drawn by SatelliteModel. */
+/** `onTick` (crew mode) gets the sim and the HUD ten times a second, to stream them to the rest of the crew. */
+export default function Flight3D({ p, m, build, onEnd, seed, onTick }: { p: FlightParams; m: Mission; build: Build; onEnd(s: FlightStats): void; seed?: number; onTick?: (s: SimState, h: HudState) => void }) {
   const { t } = useT();
-  const [hud, setHud] = useState(() => initialHud(p));
+  const [hud, setHudState] = useState(() => initialHud(p));
+  const tickRef = useRef(onTick);
+  tickRef.current = onTick;
   const control = useFlightControls(p, 'g3d');
   const s = useMemo(() => createSim(p, m, seed), [p, m, seed]);
   const msgs = useMemo(() => new FlightMessages(t), [t]);
+  const setHud = useCallback((h: HudState) => { setHudState(h); tickRef.current?.(s, h); }, [s]);
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
   const overlay = useRef<HTMLDivElement>(null);
@@ -45,7 +49,8 @@ export default function Flight3D({ p, m, build, onEnd, seed }: { p: FlightParams
         <Scene s={s} build={build} control={control} msgs={msgs} setHud={setHud} overlay={overlay} reachLabel={t('◀ your orbit never flies north of this line')} />
       </Canvas>
       <div ref={overlay} className="g3d-overlay" />
-      <div className="g3d-north">{t('◀ North')}</div>
+      {/* only the polar mission needs to know which side is north (the glaciers are there) */}
+      {m.farNorth && <div className="g3d-north">{t('◀ North')}</div>}
       <FlightHud p={p} m={m} hud={hud} control={control} />
     </div>
   );
@@ -59,7 +64,6 @@ function Scene({ s, build, control, msgs, setHud, overlay, reachLabel }: {
   const satPos = useMemo(() => new THREE.Vector3(1, SAT_ALT, 0), []);
   const photoAt = useRef(-9);
   const hitAt = useRef(-9);
-  const asleep = useRef(false);
   const hudAt = useRef(0);
 
   // ---- the game loop: step the rules first (priority -1), everything else reads SimState after
@@ -71,15 +75,17 @@ function Scene({ s, build, control, msgs, setHud, overlay, reachLabel }: {
       if (e.type === 'photo') photoAt.current = s.t;
       if (e.type === 'hit' || e.type === 'stormHit') hitAt.current = s.t;
     }
-    asleep.current = s.asleep;
-    if (s.t - hudAt.current > 0.1 || s.ended) { hudAt.current = s.t; setHud(hudOf(s, msgs.current(s))); }
+    if (s.t - hudAt.current > 0.1 || s.ended) { hudAt.current = s.t; setHud(hudOf(s, msgs.entries(s))); }
 
-    // screen-wide flashes: white for a photo, red for a hit, orange during a solar storm
+    // edge glows instead of full-screen tints, so the flight stays readable:
+    // red for a hit, a short white frame for a photo, a slow amber pulse inside a solar storm
     const el = overlay.current;
     if (el) {
-      const hit = Math.max(0, 1 - (s.t - hitAt.current) / 0.4), photo = Math.max(0, 1 - (s.t - photoAt.current) / 0.18);
-      const storm = s.storm === 2 ? 0.14 + Math.sin(s.t * 9) * 0.05 : 0;
-      el.style.background = hit > 0 ? `rgba(255,40,40,${0.35 * hit})` : photo > 0 ? `rgba(255,255,255,${0.22 * photo})` : storm > 0 ? `rgba(255,140,30,${storm})` : 'transparent';
+      const hit = Math.max(0, 1 - (s.t - hitAt.current) / 0.5), photo = Math.max(0, 1 - (s.t - photoAt.current) / 0.22);
+      const storm = s.storm === 2 ? 0.32 + Math.sin(s.t * 4) * 0.12 : 0;
+      el.style.boxShadow = hit > 0 ? `inset 0 0 140px 30px rgba(239,91,82,${0.75 * hit})`
+        : photo > 0 ? `inset 0 0 90px 8px rgba(255,255,255,${0.4 * photo})`
+        : storm > 0 ? `inset 0 0 180px 40px rgba(242,169,59,${storm})` : 'none';
     }
   }, -1);
 
@@ -95,8 +101,7 @@ function Scene({ s, build, control, msgs, setHud, overlay, reachLabel }: {
       <Stations s={s} tr={tr} satPos={satPos} />
       <StormSparks s={s} />
       <FlightSatellite s={s} pos={satPos} photoAt={photoAt}>
-        {/* TODO(dev2): <SatelliteModel build={build} mission={s.m} shadow={s.shadow} asleep={s.asleep} safe={s.safe} /> */}
-        <SatelliteStandIn asleep={asleep} build={build} />
+        <FlightModel s={s} build={build} />
       </FlightSatellite>
       {!s.p.reachesTargets && <ReachLabel tr={tr} text={reachLabel} />}
     </>
