@@ -93,7 +93,7 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
           {!inSpace && links}
         </nav>
       </header>
-      {phase === 'career' && <Home stars={stars} openAll={openAll} onPick={pick} onList={() => setPhase('missions')} onCrew={() => setPhase('crew')} />}
+      {phase === 'career' && <Home stars={stars} onList={() => setPhase('missions')} onCrew={() => setPhase('crew')} />}
       {phase === 'missions' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} globe={flight3d} onBack={() => setPhase('career')} />}
       {phase === 'crew' && <Suspense fallback={<div className="g2d-page" />}><CrewGame code={CREW_CODE} flight3d={flight3d} onSpace={setCrewSpace} onExit={() => { setCrewSpace(false); setPhase('career'); }} /></Suspense>}
       {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} onBack={() => setPhase('missions')} />}
@@ -157,11 +157,9 @@ function ModeArt({ crew }: { crew: boolean }) {
 
 // ---------------------------------------------------------------------------
 /** The home screen: two ways to play. */
-function Home({ stars, openAll, onPick, onList, onCrew }: { stars: Record<string, number>; openAll: boolean; onPick(m: Mission): void; onList(): void; onCrew(): void }) {
+function Home({ stars, onList, onCrew }: { stars: Record<string, number>; onList(): void; onCrew(): void }) {
   const { t } = useT();
-  const unlocked = (m: Mission) => openAll || m.num === 1 || (stars[MISSIONS[m.num - 2].id] ?? 0) > 0;
   const total = MISSIONS.reduce((s, m) => s + (stars[m.id] ?? 0), 0);
-  const next = MISSIONS.find((m) => unlocked(m) && !(stars[m.id] ?? 0)) ?? MISSIONS.filter(unlocked).at(-1) ?? MISSIONS[0];
   return (
     <div className="g2d-page">
       <div className="g2d-doc">
@@ -174,10 +172,10 @@ function Home({ stars, openAll, onPick, onList, onCrew }: { stars: Record<string
               <span className="g2d-mode-tag">{t('1 player')}</span>
               <h2>{t('Solo missions')}</h2>
               <p>{t('You are the whole team: six customers, six satellites, from a student CubeSat to a city map.')}</p>
-              <p className="g2d-mode-meta">{t('Stars earned: {n} of {m}', { n: total, m: MISSIONS.length * 3 })}. <button className="g2d-mode-link" onClick={onList}>{t('All missions')}</button></p>
+              <p className="g2d-mode-meta">{t('Stars earned: {n} of {m}', { n: total, m: MISSIONS.length * 3 })}</p>
             </div>
             <div className="g2d-mode-go">
-              <button className="r-btn" onClick={() => onPick(next)}>{total === 0 ? t('Start mission 1') : t('Continue: mission {n}', { n: next.num })}</button>
+              <button className="r-btn" onClick={onList}>{t('Choose a mission')}</button>
             </div>
           </section>
           <section className="g2d-mode">
