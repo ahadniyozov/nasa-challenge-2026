@@ -21,9 +21,9 @@ const Launch3D = lazy(() => import('../game3d/Launch3D').then((m) => ({ default:
 export function CrewGame({ code, flight3d, onSpace, onExit }: { code: string | null; flight3d: boolean; onSpace(on: boolean): void; onExit(): void }) {
   const c = useCrew();
   const { crew } = c;
-  useEffect(() => { onSpace(crew?.phase === 'launch' || crew?.phase === 'flight'); }, [crew?.phase, onSpace]);
+  useEffect(() => { if (!crew) onSpace(false); }, [crew, onSpace]);
   if (!crew) return <Entry c={c} code={code} onExit={onExit} />;
-  return <InCrew c={c} crew={crew} flight3d={flight3d} onExit={() => { c.leave(); onExit(); }} />;
+  return <InCrew c={c} crew={crew} flight3d={flight3d} onSpace={onSpace} onExit={() => { c.leave(); onExit(); }} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ function Entry({ c, code, onExit }: { c: CrewApi; code: string | null; onExit():
 }
 
 // ---------------------------------------------------------------------------
-function InCrew({ c, crew, flight3d, onExit }: { c: CrewApi; crew: CrewState; flight3d: boolean; onExit(): void }) {
+function InCrew({ c, crew, flight3d, onSpace, onExit }: { c: CrewApi; crew: CrewState; flight3d: boolean; onSpace(on: boolean): void; onExit(): void }) {
   const tr = useT();
   const { t } = tr;
   const m = useMemo(() => MISSIONS.find((x) => x.id === crew.missionId) ?? MISSIONS[0], [crew.missionId]);
@@ -82,6 +82,9 @@ function InCrew({ c, crew, flight3d, onExit }: { c: CrewApi; crew: CrewState; fl
   const [focus, setFocus] = useState<SlotId | null>(null);
   // the launch animation finished on this screen (per run)
   const [launched, setLaunched] = useState(-1);
+  // the top bar goes dark only over the launch and the director's flight; the crew's consoles are light pages
+  const dark = (crew.phase === 'launch' && launched !== crew.run) || ((crew.phase === 'launch' || crew.phase === 'flight') && has('director'));
+  useEffect(() => { onSpace(dark); }, [dark, onSpace]);
 
   if (crew.phase === 'lobby') return <Lobby c={c} crew={crew} onExit={onExit} />;
 

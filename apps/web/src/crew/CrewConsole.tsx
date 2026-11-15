@@ -20,7 +20,7 @@ export function CrewConsole({ c, crew, m, a, mine }: { c: CrewApi; crew: CrewSta
 
   if (!s) {
     return (
-      <div className="runner-stage crew-console waiting">
+      <div className="crew-console waiting">
         <p>{t("Waiting for the flight director's data...")}</p>
       </div>
     );
@@ -30,7 +30,7 @@ export function CrewConsole({ c, crew, m, a, mine }: { c: CrewApi; crew: CrewSta
   const color = ZONE_COLOR[m.targets.kind];
 
   return (
-    <div className={`runner-stage crew-console ${s.shadow ? 'night' : ''} ${s.storm === 2 ? 'storm' : ''}`}>
+    <div className={`crew-console ${s.shadow ? 'night' : ''} ${s.storm === 2 ? 'storm' : ''}`}>
       <header className="cc-head">
         <div><span>{t('Your console')}</span><b>{roles.map((r) => t(ROLE_TITLE[r])).join(' / ')}</b></div>
         <div><span>{t('Flying')}</span><b>{director?.name ?? '-'}</b></div>
@@ -73,7 +73,7 @@ export function CrewConsole({ c, crew, m, a, mine }: { c: CrewApi; crew: CrewSta
               {p.storms > 0 && (
                 <>
                   <div className="cc-row"><span>{t('Sun')}</span><b className={`cc-lamp ${s.storm === 2 ? 'storm now' : s.storm === 1 ? 'storm' : ''}`}>{s.storm === 2 ? t('Solar storm') : s.storm === 1 ? t('Solar storm ahead') : t('Quiet')}</b></div>
-                  <button className={`fh-lamp fh-switch cc-safe ${s.safe ? 'on' : ''}`} aria-pressed={s.safe} onClick={() => c.emit('crew:safe', { on: !s.safe })}>{t('Safe mode')}</button>
+                  <button className={`g2d-ghost cc-safe ${s.safe ? 'on' : ''}`} aria-pressed={s.safe} onClick={() => c.emit('crew:safe', { on: !s.safe })}>{t('Safe mode')}</button>
                 </>
               )}
             </section>

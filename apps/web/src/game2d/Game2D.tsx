@@ -86,8 +86,8 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
       <header className="runner-top">
         <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : phase === 'crew' ? t('Crew mode') : t(mission.title)}</small></div>
         <nav className="runner-links" aria-label={t('Menu')}>
-          {!inSpace && phase !== 'career' && <button className="link" onClick={() => setPhase('career')}>{t('Missions')}</button>}
-          {!inSpace && phase !== 'resources' && <button className="link" onClick={() => setPhase('resources')} title={t('NASA Resources')}>{t('Resources')}</button>}
+          {!inSpace && phase !== 'career' && phase !== 'crew' && <button className="link" onClick={() => setPhase('career')}>{t('Missions')}</button>}
+          {!inSpace && phase !== 'resources' && phase !== 'crew' && <button className="link" onClick={() => setPhase('resources')} title={t('NASA Resources')}>{t('Resources')}</button>}
           <SoundToggle />
           {/* in flight only the sound button: nothing that leaves the mission or restarts it by accident */}
           {!inSpace && links}
