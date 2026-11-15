@@ -1,0 +1,16 @@
+# Crew-mode server (socket.io on 127.0.0.1:8787) for the relay that serves gonogo.twiy.ceo.
+# Install: sudo cp deploy/gonogo-crew.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now gonogo-crew
+[Unit]
+Description=GO / NO-GO crew server
+After=network.target
+
+[Service]
+User=ahad
+WorkingDirectory=/home/ahad/gonogo
+Environment=PORT=8787 NODE_ENV=production
+ExecStart=/home/ahad/gonogo/node_modules/.bin/tsx apps/server/src/index.ts
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

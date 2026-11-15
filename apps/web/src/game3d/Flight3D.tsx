@@ -3,7 +3,7 @@
 // The sim is stepped in useFrame and meshes are moved through refs - no React state per frame.
 import { Stars } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import * as THREE from 'three';
 import type { Build, FlightParams } from '../game2d/config';
 import { FlightHud, FlightMessages, hudOf, initialHud, playFlightSounds, useFlightControls, type HudState } from '../game2d/FlightHud';
@@ -18,12 +18,16 @@ import { Debris, Lanes, Stations, StormSparks } from './flight/World';
 import './flight3d.css';
 
 /** `build` is the player's satellite, drawn by SatelliteModel. */
-export default function Flight3D({ p, m, build, onEnd, seed }: { p: FlightParams; m: Mission; build: Build; onEnd(s: FlightStats): void; seed?: number }) {
+/** `onTick` (crew mode) gets the sim and the HUD ten times a second, to stream them to the rest of the crew. */
+export default function Flight3D({ p, m, build, onEnd, seed, onTick }: { p: FlightParams; m: Mission; build: Build; onEnd(s: FlightStats): void; seed?: number; onTick?: (s: SimState, h: HudState) => void }) {
   const { t } = useT();
-  const [hud, setHud] = useState(() => initialHud(p));
+  const [hud, setHudState] = useState(() => initialHud(p));
+  const tickRef = useRef(onTick);
+  tickRef.current = onTick;
   const control = useFlightControls(p, 'g3d');
   const s = useMemo(() => createSim(p, m, seed), [p, m, seed]);
   const msgs = useMemo(() => new FlightMessages(t), [t]);
+  const setHud = useCallback((h: HudState) => { setHudState(h); tickRef.current?.(s, h); }, [s]);
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
   const overlay = useRef<HTMLDivElement>(null);

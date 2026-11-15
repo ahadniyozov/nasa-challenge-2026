@@ -22,14 +22,17 @@ const HangarView = lazy(() => import('../game3d/Hangar3D').then((m) => ({ defaul
 const GlobeHero = lazy(() => import('../game3d/Career3D').then((m) => ({ default: m.GlobeHero })));
 
 /** If the 3D flight cannot start (no WebGL context, chunk failed to load), fly the same mission in 2D. */
-class Fallback2D extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+export class Fallback2D extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   componentDidCatch(e: unknown) { console.warn('3D flight failed, switching to 2D', e); }
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build' | 'resources';
+type Phase = 'career' | 'brief' | 'launch' | 'flight' | 'report' | 'build' | 'resources' | 'crew';
+/** crew mode (2-4 players) lives in its own chunk with the network client */
+const CrewGame = lazy(() => import('../crew/CrewGame').then((m) => ({ default: m.CrewGame })));
+const CREW_CODE = new URLSearchParams(location.search).get('crew');
 
 // ---- progress (stars per mission), kept in this browser only
 const KEY = 'g2d-progress-v1';
@@ -43,7 +46,7 @@ function saveStars(v: Record<string, number>) {
 export function Game2D({ links, flight3d = false }: { links: React.ReactNode; flight3d?: boolean }) {
   const tr = useT();
   const { t } = tr;
-  const [phase, setPhase] = useState<Phase>('career');
+  const [phase, setPhase] = useState<Phase>(CREW_CODE !== null ? 'crew' : 'career');
   const [mission, setMission] = useState<Mission>(MISSIONS[0]);
   const [build, setBuild] = useState<Build>(MISSIONS[0].start);
   const [isTest, setIsTest] = useState(true);
@@ -76,11 +79,12 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
     setStars(next); saveStars(next);
   };
 
-  const inSpace = phase === 'flight' || phase === 'launch';
+  const [crewSpace, setCrewSpace] = useState(false);
+  const inSpace = phase === 'flight' || phase === 'launch' || (phase === 'crew' && crewSpace);
   return (
     <div className={`runner g2d ${inSpace ? 'in-space' : ''}`}>
       <header className="runner-top">
-        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : t(mission.title)}</small></div>
+        <div className="logo">GO<span>/</span>NO-GO <small>{phase === 'career' || phase === 'resources' ? t('Mission Control') : phase === 'crew' ? t('Crew mode') : t(mission.title)}</small></div>
         <nav className="runner-links" aria-label={t('Menu')}>
           {!inSpace && phase !== 'career' && <button className="link" onClick={() => setPhase('career')}>{t('Missions')}</button>}
           {!inSpace && phase !== 'resources' && <button className="link" onClick={() => setPhase('resources')} title={t('NASA Resources')}>{t('Resources')}</button>}
@@ -89,7 +93,8 @@ export function Game2D({ links, flight3d = false }: { links: React.ReactNode; fl
           {!inSpace && links}
         </nav>
       </header>
-      {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} globe={flight3d} />}
+      {phase === 'career' && <Career stars={stars} openAll={openAll} onOpenAll={() => setOpenAll(true)} onPick={pick} globe={flight3d} onCrew={() => setPhase('crew')} />}
+      {phase === 'crew' && <Suspense fallback={<div className="g2d-page" />}><CrewGame code={CREW_CODE} flight3d={flight3d} onSpace={setCrewSpace} onExit={() => { setCrewSpace(false); setPhase('career'); }} /></Suspense>}
       {phase === 'brief' && <Brief m={mission} onTest={() => { setBuild(mission.test!); fly(true); }} onBuild={() => toBuild(null)} onBack={() => setPhase('career')} />}
       {phase === 'launch' && (flight3d
         ? (
@@ -126,7 +131,7 @@ function Stars({ n, label }: { n: number; label: string }) {
 }
 
 // ---------------------------------------------------------------------------
-function Career({ stars, openAll, onOpenAll, onPick, globe }: { stars: Record<string, number>; openAll: boolean; onOpenAll(): void; onPick(m: Mission): void; globe: boolean }) {
+function Career({ stars, openAll, onOpenAll, onPick, globe, onCrew }: { stars: Record<string, number>; openAll: boolean; onOpenAll(): void; onPick(m: Mission): void; globe: boolean; onCrew(): void }) {
   const { t } = useT();
   const unlocked = (m: Mission) => openAll || m.num === 1 || (stars[MISSIONS[m.num - 2].id] ?? 0) > 0;
   // the globe faces the next mission to fly, then follows the row under the pointer or keyboard focus
@@ -138,6 +143,10 @@ function Career({ stars, openAll, onOpenAll, onPick, globe }: { stars: Record<st
       <div className="g2d-doc">
         <h1>{t('Mission manifest')}</h1>
         <p className="g2d-lead">{t('Six customers, six satellites. Each mission adds one new engineering problem. Earn a star to unlock the next one.')}</p>
+        <div className="g2d-crew-cta">
+          <div><b>{t('Crew mode')}</b><span>{t('2-4 players, each on their own phone or laptop: flight director, engineer, scientist and communications design one satellite together.')}</span></div>
+          <button className="g2d-ghost" onClick={onCrew}>{t('Play as a crew')}</button>
+        </div>
         {globe && (
           <Fallback2D fallback={null}>
             <Suspense fallback={<div className="g3d-globe-wait" />}>
@@ -271,8 +280,12 @@ function lessonsFor(m: Mission, a: Analysis, s: FlightStats): Lesson[] {
   return out.map((l) => (can(l.slot) ? l : { ...l, locked: true }));
 }
 
-function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCareer }: {
-  tr: T; m: Mission; a: Analysis; stats: FlightStats; isTest: boolean; onStars(n: number): void; onFix(s: SlotId): void; onAgain(): void; onNext?: () => void; onCareer(): void;
+export function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCareer, ownerOf, waiting }: {
+  tr: T; m: Mission; a: Analysis; stats: FlightStats; isTest: boolean; onStars(n: number): void; onFix(s: SlotId): void; onAgain?: () => void; onNext?: () => void; onCareer?: () => void;
+  /** crew mode: who decided each part (shown next to each finding) */
+  ownerOf?: (s: SlotId) => string;
+  /** crew mode: the next step belongs to the flight director */
+  waiting?: string;
 }) {
   const { t } = tr;
   const reqs = requirements(t, m, a, stats);
@@ -312,7 +325,7 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
             <ul className="g2d-findings">
               {lessons.map((l, i) => (
                 <li key={i}>
-                  <span>{t(l.text, l.params)}</span>
+                  <span>{ownerOf && <em className="g2d-owner">{ownerOf(l.slot)}</em>}{t(l.text, l.params)}</span>
                   {l.locked
                     ? <small className="g2d-later">{t('You can change this on later missions.')}</small>
                     : <button className="g2d-ghost small" onClick={() => onFix(l.slot)}>{t('Change {s}', { s: slotTitle(l.slot).toLowerCase() })}</button>}
@@ -325,9 +338,10 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
         {all && <RealityCard missionId={m.id} />}
         <div className="g2d-actions">
           {all && onNext && <button className="r-btn" onClick={onNext}>{t('Next mission')}</button>}
-          {all && !onNext && <button className="r-btn" onClick={onCareer}>{t('All missions done')}</button>}
+          {all && !onNext && onCareer && <button className="r-btn" onClick={onCareer}>{t('All missions done')}</button>}
           {!all && <button className="r-btn" onClick={() => onFix(lessons.find((l) => !l.locked)?.slot ?? m.slots[0])}>{t('Redesign the satellite')}</button>}
-          <button className="g2d-ghost" onClick={onAgain}>{t('Fly again')}</button>
+          {onAgain && <button className="g2d-ghost" onClick={onAgain}>{t('Fly again')}</button>}
+          {waiting && <p className="g2d-note">{waiting}</p>}
           {all && <button className="g2d-ghost" onClick={() => onFix(m.slots[0])}>{t('Improve the design')}</button>}
         </div>
       </div>
@@ -336,7 +350,15 @@ function Report({ tr, m, a, stats, isTest, onStars, onFix, onAgain, onNext, onCa
 }
 
 // ---------------------------------------------------------------------------
-function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch, use3d }: { m: Mission; build: Build; setBuild(b: Build): void; focus: SlotId | null; setFocus(s: SlotId | null): void; onLaunch(): void; use3d: boolean }) {
+export function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch, use3d, canEdit, ownerOf, top, actions }: {
+  m: Mission; build: Build; setBuild(b: Build): void; focus: SlotId | null; setFocus(s: SlotId | null): void; onLaunch(): void; use3d: boolean;
+  /** crew mode: only the parts this player's role decides can be changed */
+  canEdit?: (id: SlotId) => boolean;
+  ownerOf?: (id: SlotId) => string;
+  /** crew mode: the team panel above the parts, and the poll in place of the launch button */
+  top?: React.ReactNode;
+  actions?: (a: Analysis) => React.ReactNode;
+}) {
   const { t } = useT();
   const a = useMemo(() => analyse(build, m), [build, m]);
   const slots = useMemo(() => slotsFor(m), [m]);
@@ -353,16 +375,17 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch, use3d }: {
     const slot = slots.find((s) => s.id === id)!;
     const chosen = slot.options.find((o) => o.id === build[id]) ?? slot.options[0];
     const open = focus === id;
+    const mine = !canEdit || canEdit(id);
     return (
       <div key={id} className={`g2d-slot ${open ? 'open' : ''}`}>
         <button className="g2d-slot-head" aria-expanded={open} onClick={() => { setFocus(open ? null : id); setShown(null); }}>
-          <b>{t(slot.title)}</b><span className="v">{t(chosen.title)}</span>
+          <b>{t(slot.title)}{ownerOf && <em className={`g2d-owner ${mine ? 'mine' : ''}`}>{ownerOf(id)}</em>}</b><span className="v">{t(chosen.title)}</span>
           <svg className="chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
         </button>
         {open && (
           <div className="g2d-opts" role="radiogroup" aria-label={t(slot.title)}>
             {slot.options.map((o) => (
-              <button key={o.id} role="radio" aria-checked={build[id] === o.id} className={`g2d-opt ${build[id] === o.id ? 'on' : ''} ${PART_PHOTOS[o.id] ? 'has-photo' : ''}`} onClick={() => { setBuild({ ...build, [id]: o.id }); setShown(o.id); }}>
+              <button key={o.id} role="radio" disabled={!mine} aria-checked={build[id] === o.id} className={`g2d-opt ${build[id] === o.id ? 'on' : ''} ${PART_PHOTOS[o.id] ? 'has-photo' : ''}`} onClick={() => { setBuild({ ...build, [id]: o.id }); setShown(o.id); }}>
                 <b>{t(o.title)}</b>{o.text && <small>{t(o.text)}</small>}
                 {PART_PHOTOS[o.id] && <img src={photoUrl(PART_PHOTOS[o.id])} alt="" loading="lazy" />}
               </button>
@@ -403,6 +426,7 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch, use3d }: {
         </div>
       </div>
       <div className="g2d-slots">
+        {top}
         {sat.length > 0 && <h3>{t('Spacecraft')}</h3>}
         {sat.map((s) => slotRow(s.id))}
         {mis.length > 0 && <h3>{t('Launch and operations')}</h3>}
@@ -421,7 +445,7 @@ function BuildScreen({ m, build, setBuild, focus, setFocus, onLaunch, use3d }: {
         <div className="g2d-launch">
           {a.blockers.map((b) => <div key={b} className="g2d-blocker">{t(b)}</div>)}
           {a.canLaunch && overLimit.length > 0 && <div className="g2d-blocker caution">{t('Over the limit: {list}', { list: overLimit.join(', ') })}</div>}
-          <button className="r-btn" disabled={!a.canLaunch} onClick={onLaunch}>{!a.canLaunch ? t('NO-GO') : overLimit.length > 0 ? t('Launch anyway') : t('GO for launch')}</button>
+          {actions ? actions(a) : <button className="r-btn" disabled={!a.canLaunch} onClick={onLaunch}>{!a.canLaunch ? t('NO-GO') : overLimit.length > 0 ? t('Launch anyway') : t('GO for launch')}</button>}
         </div>
       </footer>
     </div>

@@ -219,3 +219,9 @@
   .g2d-photo { grid-template-columns: 140px minmax(0, 1fr); }
   .g2d-photo img { width: 140px; height: 100px; }
 }
+
+/* career screen: the way into crew mode */
+.g2d-crew-cta { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin: 0 0 24px; padding: 16px 20px; border-radius: 10px; background: var(--sheet); border: 1px solid var(--rule); }
+.g2d-crew-cta b { display: block; font: 600 22px var(--display); }
+.g2d-crew-cta span { color: var(--steel); font-size: 15px; }
+
