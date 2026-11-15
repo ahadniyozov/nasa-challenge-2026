@@ -121,3 +121,15 @@
   .fh-tip { top: 74px; left: 12px; right: auto; transform: none; max-width: 46%; font-size: 13px; padding: 8px 12px; text-align: left; }
   .fh-annun { bottom: 8px; transform: translateX(-50%) scale(.85); transform-origin: bottom center; }
 }
+
+/* phones held upright: smaller status band, tips and messages, so they stay out of the way of the track */
+@media (max-width: 560px) {
+  .fh-cell { padding: 4px 10px 5px; gap: 3px; }
+  .fh-goal b { font-size: 22px; }
+  .fh-cells { height: 13px; }
+  .fh-tip { top: 112px; left: 50%; right: auto; transform: translateX(-50%); width: max-content; max-width: 92%; font-size: 12.5px; line-height: 1.35; padding: 6px 10px; border-radius: 8px; }
+  .fh-log { top: 112px; }
+  :has(> .fh-tip) > .fh-log { top: 176px; } /* while the first tip is up, messages go under it */
+  .fh-log li { font-size: 12.5px; padding: 4px 9px; }
+  .fh-orbit { transform: scale(.85); transform-origin: bottom right; }
+}
