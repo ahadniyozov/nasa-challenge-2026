@@ -12,7 +12,7 @@ const D = Math.PI / 180;
 /** longitude the flight starts over, so each mission begins above its own part of the world */
 const START_LON: Record<string, number> = { first: 20, wildfire: 95, ice: -42, weather: -55, spaceweather: 0, mapping: 8 };
 
-const earthVertex = /* glsl */ `
+export const earthVertex = /* glsl */ `
   varying vec2 vUv; varying vec3 vNormalW; varying vec3 vPosW;
   void main() {
     vUv = uv;
@@ -23,7 +23,7 @@ const earthVertex = /* glsl */ `
   }`;
 // Day: Blue Marble with sunlight, ocean sun glint (water mask) and the shadows of the cloud layer above.
 // Night: Black Marble city lights, dimmed under clouds. Between them a warm terminator, and blue haze towards the limb.
-const earthFragment = /* glsl */ `
+export const earthFragment = /* glsl */ `
   uniform sampler2D dayMap; uniform sampler2D nightMap; uniform sampler2D cloudMap; uniform sampler2D waterMap;
   uniform vec3 sunDir; uniform float storm; uniform float cloudShift;
   varying vec2 vUv; varying vec3 vNormalW; varying vec3 vPosW;
@@ -58,7 +58,7 @@ const earthFragment = /* glsl */ `
     #include <colorspace_fragment>
   }`;
 // The cloud layer: a thin shell just above the ground, lit by the Sun, faintly visible at night.
-const cloudFragment = /* glsl */ `
+export const cloudFragment = /* glsl */ `
   uniform sampler2D cloudMap; uniform vec3 sunDir; uniform float cloudShift;
   varying vec2 vUv; varying vec3 vNormalW; varying vec3 vPosW;
   void main() {
@@ -71,7 +71,7 @@ const cloudFragment = /* glsl */ `
     gl_FragColor = vec4(c, a * 0.92);
     #include <colorspace_fragment>
   }`;
-const atmoVertex = /* glsl */ `
+export const atmoVertex = /* glsl */ `
   varying vec3 vN; varying vec3 vV;
   void main() {
     vec4 wp = modelMatrix * vec4(position, 1.0);
@@ -79,7 +79,7 @@ const atmoVertex = /* glsl */ `
     vV = normalize(cameraPosition - wp.xyz);
     gl_Position = projectionMatrix * viewMatrix * wp;
   }`;
-const atmoFragment = /* glsl */ `
+export const atmoFragment = /* glsl */ `
   uniform vec3 sunDir; varying vec3 vN; varying vec3 vV;
   void main() {
     float rim = pow(1.0 - abs(dot(vN, vV)), 6.0);
