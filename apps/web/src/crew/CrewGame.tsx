@@ -37,7 +37,7 @@ function Entry({ c, code, onExit }: { c: CrewApi; code: string | null; onExit():
   return (
     <div className="g2d-page">
       <div className="g2d-doc crew-entry">
-        <button className="g2d-back" onClick={onExit}>{t('All missions')}</button>
+        <button className="g2d-back" onClick={onExit}>{t('Home')}</button>
         <h1>{t('Crew mode')}</h1>
         <p className="g2d-lead">{t('Design one satellite as a team. Each of you decides your own parts, the budget is shared, and nothing flies until every role says GO.')}</p>
         {c.failed && <p className="crew-error">{t('The crew server cannot be reached. Check the connection and try again.')}</p>}
